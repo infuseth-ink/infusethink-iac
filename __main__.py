@@ -1,30 +1,38 @@
-"""An Azure RM Python Pulumi program"""
+"""Infuseth.ink Infrastructure as Code with Pulumi and Azure - Frontend Only."""
 
 import pulumi
-from pulumi_azure_native import resources, storage
 
-# Create an Azure Resource Group
-resource_group = resources.ResourceGroup("resource_group")
+from config import load_config
+from modules.frontend.infuseth_frontend import InfusethFrontend
+from modules.shared.infusethink_resource_group import InfusethinkResourceGroup
 
-# Create an Azure resource (Storage Account)
-account = storage.StorageAccount(
-    "sa",
+# Load environment-specific configuration
+config = load_config()
+env_config = config["environment"]
+frontend_config = config["frontend"]
+shared_config = config["shared"]
+
+# Get Azure location from Pulumi config
+azure_config = pulumi.Config("azure-native")
+location = azure_config.require("location")
+
+# Create shared resource group
+resource_group = InfusethinkResourceGroup.sync(
+    "infusethink", location=location, environment=env_config, tags=shared_config["tags"]
+)
+
+# Create frontend (Static Web App)
+frontend = InfusethFrontend.sync(
+    "frontend",
     resource_group_name=resource_group.name,
-    sku={
-        "name": storage.SkuName.STANDARD_LRS,
-    },
-    kind=storage.Kind.STORAGE_V2,
+    location=location,
+    environment=env_config,
+    app_name=frontend_config["app_name"],
+    sku_tier=frontend_config["sku_tier"],
+    tags=shared_config["tags"],
 )
 
-# Export the primary key of the Storage Account
-primary_key = (
-    pulumi.Output.all(resource_group.name, account.name)
-    .apply(
-        lambda args: storage.list_storage_account_keys(
-            resource_group_name=args[0], account_name=args[1]
-        )
-    )
-    .apply(lambda accountKeys: accountKeys.keys[0].value)
-)
-
-pulumi.export("primary_storage_key", primary_key)
+# Export important values
+pulumi.export("environment", env_config)
+pulumi.export("resource_group_name", resource_group.name)
+pulumi.export("frontend_url", frontend.default_hostname)
