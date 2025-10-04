@@ -1,89 +1,98 @@
- # Azure Native Python Pulumi Template
+# Infuseth.ink Infrastructure as Code
 
- A minimal Pulumi template for provisioning an Azure Resource Group and a Storage Account using the Azure Native provider with Python.
+Infrastructure as Code for Infuseth.ink using Pulumi and Azure. This project manages a multi-environment setup with frontend (Static Web Apps) and backend (App Service) deployments.
 
- ## Overview
+## 🏗️ Architecture Overview
 
- This template demonstrates:
+This infrastructure supports a modular, multi-environment setup with separate frontend and backend services:
 
- - Provider: `pulumi-azure-native`
- - Resources:
-   - `azure-native:resources:ResourceGroup` — a new resource group
-   - `azure-native:storage:StorageAccount` — a storage account in the resource group
- - Output:
-   - `primary_storage_key` — the primary key of the storage account
+### Environment Plan
 
- Use this template as a starting point to learn Pulumi, author infrastructure-as-code in Python, and build on top of basic Azure resources.
+| Environment | Frontend (FE)                          | Backend (BE)                              | Custom Domain | Purpose                                                             |
+| ----------- | -------------------------------------- | ----------------------------------------- | ------------- | ------------------------------------------------------------------- |
+| **dev**     | `infusethink-trials.azurewebsites.net` | `infusethink-labs.azurewebsites.net`      | ❌            | Development testing - you can break it, minimal coordination needed |
+| **staging** | `infusethink-demo.azurewebsites.net`   | `infusethink-backstage.azurewebsites.net` | ❌            | QA and demo purposes - gatekeeps production                         |
+| **prod**    | `infusethink-app.azurewebsites.net`    | `infusethink-api.azurewebsites.net`       | 👇            | Production environment with original domains                        |
+| **prod**    | `app.infuseth.ink`                     | `api.infuseth.ink`                        | ✅            | Production environment using custom domains                         |
 
- ## Prerequisites
+### Environment Notes
 
- - An Azure subscription with sufficient permissions
- - Azure CLI installed and authenticated (`az login`)
- - Python 3.7 or later
+- **dev**: Experimental environment where any developer can push with minimal coordination. Perfect for testing:
+  - Remote environment issues you're not confident testing locally
+  - Cookie SameSite policies and cross-origin behavior
+  - CDN and caching behavior
+  - Sharing a possibly unstable version with team members or stakeholders
+  - Offloading backend to free up laptop resources
+- **staging**: QA and demonstration environment. Changes require review and gatekeeps production from bugs
+  - Final QA testing before production
+  - Client demonstrations and previews
+- **prod**: Production environment with custom domains and full monitoring
 
- ## Usage
+### Azure Services Used
 
- 1. Create a new project from this template:
+- **Frontend**: Azure Static Web Apps (free tier available)
 
-    ```bash
-    pulumi new azure-python
-    ```
+## 🚀 Deployment
 
- 2. When prompted, enter your project name, description, and Azure location. The default `azure-native:location` is `WestUS2`.
+### Prerequisites
 
- 3. Deploy the stack:
+- Azure CLI installed and authenticated (`az login`)
+- Pulumi CLI installed
+- Python 3.13+ with uv package manager
 
-    ```bash
-    pulumi up
-    ```
+### Setup
 
- ## Project Layout
+1. Install dependencies:
 
- ```plaintext
- .
- ├── __main__.py        # Pulumi program defining your infrastructure
- ├── Pulumi.yaml        # Project settings and template metadata
- └── requirements.txt   # Python dependencies (Pulumi SDK and provider)
- ```
+   ```bash
+   uv sync --dev
+   ```
 
- ## Configuration
+2. Configure Pulumi stack for your environment:
 
- This template exposes the following configuration variable:
+   ```bash
+   pulumi stack init dev  # or staging/prod
+   pulumi config set azure-native:location southeastasia
+   ```
 
- - `azure-native:location` — Azure region to deploy resources. Defaults to `WestUS2`.
+3. Deploy:
+   ```bash
+   pulumi up
+   ```
 
- Set or override it with:
+## 🛠️ Development
 
- ```bash
- pulumi config set azure-native:location eastus
- ```
+This project uses modern Python development tools:
 
- ## Outputs
+- **Ruff**: Fast linting and formatting
+- **Pyright**: Static type checking
+- **Commitizen**: Conventional commit messages
+- **pre-commit**: Automated code quality checks
 
- After deployment, the following output is available:
+### Commit Message Format
 
- - `primary_storage_key` — the primary access key for the storage account
+Use conventional commits:
 
- Retrieve it with:
+```bash
+feat: add new Azure Static Web App module
+fix: resolve DNS configuration issue
+docs: update deployment guide
+```
 
- ```bash
- pulumi stack output primary_storage_key
- ```
+Or use the interactive tool:
 
- ## When to Use This Template
+```bash
+cz commit
+```
 
- - You want a quick Azure infrastructure starter with Pulumi and Python
- - You're learning infrastructure-as-code patterns on Azure
- - You need a simple storage account setup to build applications
+## 📁 Project Structure
 
- ## Next Steps
-
- - Customize resource names and add more Azure services (e.g., Virtual Networks, Key Vault)
- - Explore the `pulumi-azure-native` documentation for available services
- - Migrate this template into a larger multi-stack setup
-
- ## Getting Help
-
- - Pulumi Documentation: https://www.pulumi.com/docs/
- - Azure Native Provider Reference: https://www.pulumi.com/registry/packages/azure-native/
- - Community Support: https://pulumi.com/community/
+```
+├── __main__.py              # Main Pulumi program
+├── modules/                 # Reusable Pulumi modules
+│   ├── frontend/           # Static Web App module
+│   ├── backend/            # App Service module
+│   └── shared/             # Shared resources (storage, DNS)
+├── config/                 # Environment-specific configurations
+└── scripts/                # Deployment and utility scripts
+```
