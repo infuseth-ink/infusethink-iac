@@ -6,3 +6,203 @@ dependencies = [
     "pulumi>=3.0.0,<4.0.0",
     "pulumi-azure-native>=3.0.0,<4.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.9.1",
+    "pre-commit>=4.3.0",
+    "pyright>=1.1.406",
+    "ruff>=0.13.3",
+]
+
+[tool.ruff]
+# Target Python 3.13 for latest features and improvements
+target-version = "py313"
+line-length = 88
+indent-width = 4
+
+# Include pyproject.toml for linting project configuration
+include = ["*.py", "*.pyi", "*.pyw", "*.ipynb", "pyproject.toml"]
+
+# Use gitignore for intelligent exclusions
+respect-gitignore = true
+
+# Enable fix behavior by default (can be disabled with --no-fix)
+fix = true
+
+# Show all fixed violations for transparency
+show-fixes = true
+
+[tool.ruff.lint]
+# Select comprehensive rule set for modern Python development
+select = [
+    # Pyflakes (F) - Essential error detection
+    "F",
+    # pycodestyle errors (E) - PEP 8 compliance
+    "E",
+    # pycodestyle warnings (W) - Additional style issues
+    "W",
+    # flake8-bugbear (B) - Likely bugs and design problems
+    "B",
+    # flake8-simplify (SIM) - Code simplification suggestions
+    "SIM",
+    # isort (I) - Import sorting and organization
+    "I",
+    # pyupgrade (UP) - Modern Python syntax upgrades
+    "UP",
+    # flake8-comprehensions (C4) - Better list/set/dict comprehensions
+    "C4",
+    # flake8-pie (PIE) - Miscellaneous improvements
+    "PIE",
+    # Ruff-specific rules (RUF) - Performance and style improvements
+    "RUF",
+]
+
+# Ignore some overly restrictive rules for development workflow
+ignore = [
+    # E501 handled by formatter for better line wrapping
+    "E501",
+    # Allow print statements for debugging (remove in production)
+    "T201",
+    # Allow TODO comments during development
+    "FIX002",
+]
+
+# Allow automatic fixes for most rules
+fixable = ["ALL"]
+
+# Prevent auto-fixing of potentially unsafe changes
+unfixable = [
+    # Never auto-remove unused imports in __init__.py (may be re-exports)
+    "F401",
+]
+
+# Enable preview mode for latest rule improvements
+preview = false
+
+[tool.ruff.lint.per-file-ignores]
+# Allow unused imports in __init__.py (common for re-exports)
+"__init__.py" = ["F401"]
+# Allow longer lines in migrations or generated files
+"**/migrations/*.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+# Modern import sorting configuration
+combine-as-imports = true
+force-sort-within-sections = true
+split-on-trailing-comma = true
+
+# Import sections in logical order
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder"
+]
+
+# Recognize project structure (auto-detects 'src' layout)
+known-first-party = ["infusethink"]
+
+[tool.ruff.format]
+# Modern Python formatting preferences
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+# Enable docstring code formatting for better documentation
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+# Respect trailing commas for better git diffs
+skip-magic-trailing-comma = false
+
+# Preview formatting features
+preview = false
+
+[tool.commitizen]
+# Use conventional commits specification
+name = "cz_conventional_commits"
+
+# Version management settings
+version_provider = "pyproject"
+update_changelog_on_bump = true
+version_scheme = "semver"
+
+# Conventional commit configuration
+bump_message = "bump: version $current_version → $new_version"
+tag_format = "v$version"
+
+# Commit message templates and validation
+allowed_prefixes = [
+    "feat",
+    "fix",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "build",
+    "ci",
+    "chore"
+]
+
+# Generate changelog from conventional commits
+changelog_file = "CHANGELOG.md"
+changelog_start_rev = "v0.1.0"
+
+# Customize commit message format
+message_template = "{{change_type}}{% if scope %}({{scope}}){% endif %}: {{message}}"
+
+[tool.pyright]
+# Python version targeting
+pythonVersion = "3.13"
+pythonPlatform = "All"
+
+# Project structure
+include = ["*.py", "**/*.py"]
+exclude = [
+    "**/__pycache__",
+    "**/node_modules",
+    ".venv",
+    ".git",
+    "**/.pytest_cache"
+]
+
+# Type checking configuration
+typeCheckingMode = "strict"
+useLibraryCodeForTypes = true
+
+# Strict mode settings for high quality type checking
+reportMissingImports = true
+reportMissingTypeStubs = false  # Don't fail on missing stubs for third-party libs
+reportImportCycles = true
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportDuplicateImport = true
+
+# Additional strict checks
+reportOptionalMemberAccess = true
+reportOptionalSubscript = true
+reportPrivateUsage = true
+reportConstantRedefinition = true
+reportIncompatibleMethodOverride = true
+reportIncompatibleVariableOverride = true
+reportUntypedFunctionDecorator = false  # Too strict for common decorators
+reportUntypedClassDecorator = false
+reportUntypedBaseClass = true
+reportUntypedNamedTuple = true
+
+# Modern Python features
+reportUnnecessaryIsInstance = true
+reportUnnecessaryCast = true
+reportUnnecessaryComparison = true
+reportUnnecessaryContains = true
+
+# Additional checks for code quality
+reportShadowedImports = true
+reportUnsupportedDunderAll = true
+reportUnusedCallResult = false  # Too noisy for many codebases
+reportUnusedCoroutine = true
