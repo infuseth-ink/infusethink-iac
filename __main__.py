@@ -21,8 +21,8 @@ resource_group = InfusethinkResourceGroup.sync(
     "infusethink", location=location, environment=env_config, tags=shared_config["tags"]
 )
 
-# Create frontend (Static Web App)
-frontend = InfusethFrontend.sync(
+# Create frontend (App Service)
+app_service_plan, web_app = InfusethFrontend.sync(
     "frontend",
     resource_group_name=resource_group.name,
     location=location,
@@ -35,4 +35,5 @@ frontend = InfusethFrontend.sync(
 # Export important values
 pulumi.export("environment", env_config)
 pulumi.export("resource_group_name", resource_group.name)
-pulumi.export("frontend_url", frontend.default_hostname)
+pulumi.export("app_service_plan_name", app_service_plan.name)
+pulumi.export("frontend_url", web_app.default_host_name)

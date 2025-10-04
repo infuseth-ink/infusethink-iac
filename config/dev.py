@@ -5,10 +5,10 @@ from typing import Any
 # Environment-specific configuration
 ENVIRONMENT = "dev"
 
-# Frontend configuration (Azure Static Web App)
+# Frontend configuration (Azure App Service)
 FRONTEND_CONFIG = {
     "app_name": "infusethink-trials",
-    "sku_tier": "Free",  # Static Web App SKU (Free or Standard)
+    "sku_tier": "F1",  # App Service SKU (F1 is free tier)
     "custom_domain": None,
 }
 

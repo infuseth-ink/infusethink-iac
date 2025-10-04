@@ -19,7 +19,7 @@ class InfusethinkResourceGroup:
         return resources.ResourceGroup(
             f"rg-{name}",
             location=location,
-            resource_group_name=f"infuseth-{environment}",
+            resource_group_name=f"rg-infusethink-{environment}",
             tags={
                 "Environment": environment,
                 "Application": "Infusethink",
