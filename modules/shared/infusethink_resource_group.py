@@ -17,9 +17,9 @@ class InfusethinkResourceGroup:
     ) -> resources.ResourceGroup:
         """Create a Resource Group with simplified arguments."""
         return resources.ResourceGroup(
-            f"rg-{name}",
+            f"rg-{name}-{environment}",
+            resource_group_name=f"rg-infuseth-{environment}",
             location=location,
-            resource_group_name=f"rg-infusethink-{environment}",
             tags={
                 "Environment": environment,
                 "Application": "Infusethink",
