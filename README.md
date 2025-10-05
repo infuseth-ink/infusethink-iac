@@ -8,12 +8,12 @@ This infrastructure supports a modular, multi-environment setup with separate fr
 
 ### Environment Plan
 
-| Environment | Frontend (FE)                          | Backend (BE)                              | Custom Domain | Purpose                                                             |
-| ----------- | -------------------------------------- | ----------------------------------------- | ------------- | ------------------------------------------------------------------- |
-| **dev**     | `infusethink-trials.azurewebsites.net` | `infusethink-labs.azurewebsites.net`      | ❌            | Development testing - you can break it, minimal coordination needed |
-| **staging** | `infusethink-demo.azurewebsites.net`   | `infusethink-backstage.azurewebsites.net` | ❌            | QA and demo purposes - gatekeeps production                         |
-| **prod**    | `infusethink-app.azurewebsites.net`    | `infusethink-api.azurewebsites.net`       | 👇            | Production environment with original domains                        |
-| **prod**    | `app.infuseth.ink`                     | `api.infuseth.ink`                        | ✅            | Production environment using custom domains                         |
+| Environment | URLs (FE = frontend, BE = backend)                                                          | Purpose                                                             |
+| ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **dev**     | FE: `infusethink-trials.azurewebsites.net` <br> BE: `infusethink-labs.azurewebsites.net`    | Development testing - you can break it, minimal coordination needed |
+| **staging** | FE: `infusethink-demo.azurewebsites.net` <br> BE: `infusethink-backstage.azurewebsites.net` | QA and demo purposes - gatekeeps production                         |
+| **prod**    | FE: `infusethink-app.azurewebsites.net` <br> BE: `infusethink-api.azurewebsites.net`        | Production environment with original domains                        |
+| **prod**    | FE: `app.infuseth.ink` <br> BE: `api.infuseth.ink`                                          | Production environment using custom domains                         |
 
 ### Environment Notes
 
