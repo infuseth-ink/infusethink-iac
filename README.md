@@ -8,12 +8,20 @@ This infrastructure supports a modular, multi-environment setup with separate fr
 
 ### Environment Plan
 
-| Environment | URLs (FE = frontend, BE = backend)                                                          | Purpose                                                             |
-| ----------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| **dev**     | FE: `infusethink-trials.azurewebsites.net` <br> BE: `infusethink-labs.azurewebsites.net`    | Development testing - you can break it, minimal coordination needed |
-| **staging** | FE: `infusethink-demo.azurewebsites.net` <br> BE: `infusethink-backstage.azurewebsites.net` | QA and demo purposes - gatekeeps production                         |
-| **prod**    | FE: `infusethink-app.azurewebsites.net` <br> BE: `infusethink-api.azurewebsites.net`        | Production environment with original domains                        |
-| **prod**    | FE: `app.infuseth.ink` <br> BE: `api.infuseth.ink`                                          | Production environment using custom domains                         |
+#### Development
+- **Frontend**: `infusethink-trials.azurewebsites.net`
+- **Backend**: `infusethink-labs.azurewebsites.net`
+- **Purpose**: Development testing - you can break it, minimal coordination needed
+
+#### Staging
+- **Frontend**: `infusethink-demo.azurewebsites.net`
+- **Backend**: `infusethink-backstage.azurewebsites.net`
+- **Purpose**: QA and demo purposes - gatekeeps production
+
+#### Production
+- **Frontend**: `app.infuseth.ink` (custom domain) / `infusethink-app.azurewebsites.net`
+- **Backend**: `api.infuseth.ink` (custom domain) / `infusethink-api.azurewebsites.net`
+- **Purpose**: Production environment
 
 ### Environment Notes
 
