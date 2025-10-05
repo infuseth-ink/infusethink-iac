@@ -59,19 +59,23 @@ class InfusethFrontend:
             location=location,
             name=app_name,
             server_farm_id=app_service_plan.id,
-            site_config={
+            site_config=web.SiteConfigArgs(
                 # TODO: Migrate to NODE|24-lts once Azure App Service adds support
-                "linuxFxVersion": "NODE:22-lts",
-                "appCommandLine": "npx serve build/web -s -p 8080",
-                "appSettings": [
-                    {"name": "WEBSITE_NODE_DEFAULT_VERSION", "value": "22-lts"},
-                    {"name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "false"},
-                    {"name": "WEBSITE_RUN_FROM_PACKAGE", "value": "1"},
+                linux_fx_version="NODE|22-lts",
+                app_command_line="npx serve ./web -s -p $PORT",
+                app_settings=[
+                    web.NameValuePairArgs(
+                        name="WEBSITE_NODE_DEFAULT_VERSION", value="22-lts"
+                    ),
+                    web.NameValuePairArgs(
+                        name="SCM_DO_BUILD_DURING_DEPLOYMENT", value="false"
+                    ),
+                    web.NameValuePairArgs(name="WEBSITE_RUN_FROM_PACKAGE", value="1"),
                 ],
-                "defaultDocuments": ["index.html"],
-                "http20Enabled": True,
-                "alwaysOn": sku_tier != "F1",
-            },
+                default_documents=["index.html"],
+                http20_enabled=True,
+                always_on=sku_tier != "F1",
+            ),
             tags={
                 "Environment": environment,
                 "Component": "Frontend",
