@@ -32,6 +32,8 @@ class InfusethFrontend:
             location=location,
             # TODO: for prod we plan to share the ASP across FE and BE, so name using the resource group
             name=f"asp-{app_name}",
+            kind="linux",
+            reserved=True,
             sku={
                 "name": sku_tier,
                 "tier": "Free"
@@ -58,13 +60,17 @@ class InfusethFrontend:
             name=app_name,
             server_farm_id=app_service_plan.id,
             site_config={
-                "app_settings": [
-                    {"name": "WEBSITE_NODE_DEFAULT_VERSION", "value": "18-lts"},
-                    {"name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "true"},
+                # TODO: Migrate to NODE|24-lts once Azure App Service adds support
+                "linuxFxVersion": "NODE:22-lts",
+                "appCommandLine": "npx serve build/web -s -p 8080",
+                "appSettings": [
+                    {"name": "WEBSITE_NODE_DEFAULT_VERSION", "value": "22-lts"},
+                    {"name": "SCM_DO_BUILD_DURING_DEPLOYMENT", "value": "false"},
+                    {"name": "WEBSITE_RUN_FROM_PACKAGE", "value": "1"},
                 ],
-                "default_documents": ["index.html"],
-                "http20_enabled": True,
-                "always_on": sku_tier != "F1",
+                "defaultDocuments": ["index.html"],
+                "http20Enabled": True,
+                "alwaysOn": sku_tier != "F1",
             },
             tags={
                 "Environment": environment,
