@@ -45,13 +45,15 @@ repos:
         name: Ruff formatter
         types: [python]
 
-  # Pyright for type checking (optional - can be slow on large codebases)
-  # Uncomment if you want type checking in pre-commit
-  # - repo: https://github.com/RobertCraigie/pyright-python
-  #   rev: v1.1.406
-  #   hooks:
-  #     - id: pyright
-  #       name: Pyright type checker
+  # Pyright for type checking
+  - repo: local
+    hooks:
+      - id: pyright
+        name: Pyright type checker
+        entry: pyright
+        language: system
+        types: [python]
+        pass_filenames: false
 
   # Commitizen for commit message validation
   - repo: https://github.com/commitizen-tools/commitizen
