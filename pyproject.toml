@@ -10,6 +10,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "commitizen>=4.9.1",
+    "cz-conventional-gitmoji>=0.7.0",
     "pre-commit>=4.3.0",
     "pyright>=1.1.406",
     "ruff>=0.13.3",
@@ -122,7 +123,7 @@ preview = false
 
 [tool.commitizen]
 # Use conventional commits specification
-name = "cz_conventional_commits"
+name = "cz_gitmoji"
 
 # Version management settings
 version_provider = "pyproject"
@@ -132,20 +133,6 @@ version_scheme = "semver"
 # Conventional commit configuration
 bump_message = "bump: version $current_version → $new_version"
 tag_format = "v$version"
-
-# Commit message templates and validation
-allowed_prefixes = [
-    "feat",
-    "fix",
-    "docs",
-    "style",
-    "refactor",
-    "perf",
-    "test",
-    "build",
-    "ci",
-    "chore"
-]
 
 # Generate changelog from conventional commits
 changelog_file = "CHANGELOG.md"

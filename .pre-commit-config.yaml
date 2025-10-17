@@ -56,12 +56,10 @@ repos:
         pass_filenames: false
 
   # Commitizen for commit message validation
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.9.1
+  - repo: https://github.com/ljnsn/cz-conventional-gitmoji
+    rev: v0.7.0
     hooks:
-      - id: commitizen
-        name: Check conventional commit format
-        stages: [commit-msg]
+      - id: conventional-gitmoji
 
   # Additional Python-specific checks
   - repo: https://github.com/astral-sh/uv-pre-commit
