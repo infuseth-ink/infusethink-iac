@@ -65,9 +65,8 @@ class InfusethBackend:
                 app_command_line="uvicorn main:app --host 0.0.0.0 --port $PORT --workers 4",
                 app_settings=[
                     web.NameValuePairArgs(
-                        name="SCM_DO_BUILD_DURING_DEPLOYMENT", value="false"
+                        name="SCM_DO_BUILD_DURING_DEPLOYMENT", value="true"
                     ),
-                    web.NameValuePairArgs(name="WEBSITE_RUN_FROM_PACKAGE", value="1"),
                 ],
                 http20_enabled=True,
                 always_on=sku_tier != "F1",
