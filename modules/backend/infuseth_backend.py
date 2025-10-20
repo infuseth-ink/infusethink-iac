@@ -61,8 +61,8 @@ class InfusethBackend:
             site_config=web.SiteConfigArgs(
                 # Python 3.13 runtime for FastAPI
                 linux_fx_version="PYTHON|3.13",
-                # FastAPI with uvicorn startup command
-                app_command_line="uvicorn main:app --host 0.0.0.0 --port $PORT --workers 4",
+                # FastAPI with gunicorn + uvicorn workers (Microsoft recommended)
+                app_command_line="gunicorn -w 2 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT main:app",
                 app_settings=[
                     web.NameValuePairArgs(
                         name="SCM_DO_BUILD_DURING_DEPLOYMENT", value="true"
