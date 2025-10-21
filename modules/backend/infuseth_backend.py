@@ -21,6 +21,7 @@ class InfusethBackend:
         environment: str,
         app_name: str,
         sku_tier: AppServiceSku = "F1",
+        database_connection_string: pulumi.Input[str] | None = None,
         tags: dict[str, str] | None = None,
     ) -> tuple[web.AppServicePlan, web.WebApp]:
         """Create an App Service Plan and Web App for FastAPI backend hosting."""
@@ -66,6 +67,16 @@ class InfusethBackend:
                 app_settings=[
                     web.NameValuePairArgs(
                         name="SCM_DO_BUILD_DURING_DEPLOYMENT", value="true"
+                    ),
+                    # Add database connection string if provided
+                    *(
+                        [
+                            web.NameValuePairArgs(
+                                name="DATABASE_URL", value=database_connection_string
+                            )
+                        ]
+                        if database_connection_string
+                        else []
                     ),
                 ],
                 http20_enabled=True,

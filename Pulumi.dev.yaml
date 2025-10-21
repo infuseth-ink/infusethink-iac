@@ -1,3 +1,5 @@
 encryptionsalt: v1:OuA/tZfmSQ4=:v1:tkZc5YZiOrRL1Lky:zO6EJ0vaqBepm1s+AljVLT3Xs1YNiw==
 config:
   azure-native:location: eastasia
+  infusethink-iac:database_password:
+    secure: v1:n6dGyqVqTjzhCDMg:eAiJnsy+QvHleNpj7aaqN2f7/Ex5h3xJ06qcHYNwBrF0PkfeC6FaKOKkL8TjG8zm2RVTgGBm3am86TY=

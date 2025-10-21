@@ -4,6 +4,7 @@ import pulumi
 from pulumi_azure_native import resources
 
 
+# Must rename this to common, to avoid confusino with shared-infra
 class InfusethinkResourceGroup:
     """Azure Resource Group factory."""
 

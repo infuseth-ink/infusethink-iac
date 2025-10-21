@@ -19,6 +19,12 @@ BACKEND_CONFIG = {
     "custom_domain": None,
 }
 
+# Database configuration (PostgreSQL Flexible Server)
+DATABASE_CONFIG = {
+    "database_name": "infusethink_dev",  # Database name with environment suffix
+    "admin_username": "infusethink_admin",  # Must match shared server's admin username
+}
+
 
 # Shared configuration
 SHARED_CONFIG = {
@@ -36,5 +42,6 @@ def get_config() -> dict[str, Any]:
         "environment": ENVIRONMENT,
         "frontend": FRONTEND_CONFIG,
         "backend": BACKEND_CONFIG,
+        "database": DATABASE_CONFIG,
         "shared": SHARED_CONFIG,
     }

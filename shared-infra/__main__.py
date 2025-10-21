@@ -57,3 +57,5 @@ pulumi.export("resource_group_name", shared_rg.name)
 pulumi.export("postgres_server_name", postgres_server.name)
 pulumi.export("postgres_server_fqdn", postgres_server.fully_qualified_domain_name)
 pulumi.export("postgres_admin_username", db_admin_username)
+# Export password as secret so environment stacks can use it
+pulumi.export("postgres_admin_password", db_admin_password)
