@@ -1,0 +1,6 @@
+config:
+  azure-native:location: eastasia
+  infusethink-shared:db_admin_username: infusethink_admin
+  infusethink-shared:db_admin_password:
+    secure: v1:46iQRMHb5PkAhqWt:as0cWT1pTLXNKnlSgbjh7EHAHtWC306NfpBwnan/itVZAQ1n1/htTP2QFWIsSiFwm9tHkid+JN8IrCg=
+encryptionsalt: v1:S35Y+7sw9No=:v1:6AeIndQq15jq8D7G:afACaMEzu1gzVX7fu6ttyyA1wH8ZEw==

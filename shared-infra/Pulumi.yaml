@@ -1,0 +1,11 @@
+name: infusethink-shared
+description: Shared infrastructure for Infusethink (PostgreSQL server)
+runtime:
+  name: python
+  options:
+    toolchain: uv
+    virtualenv: ../.venv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: azure-python
