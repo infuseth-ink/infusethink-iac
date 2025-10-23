@@ -62,11 +62,15 @@ class InfusethBackend:
             site_config=web.SiteConfigArgs(
                 # Python 3.13 runtime for FastAPI
                 linux_fx_version="PYTHON|3.13",
-                # FastAPI with gunicorn + uvicorn workers (Microsoft recommended)
-                app_command_line="gunicorn -w 2 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT main:app",
+                # Gunicorn startup command for FastAPI
+                app_command_line="gunicorn -w 2 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:$PORT src.main:app",
                 app_settings=[
                     web.NameValuePairArgs(
                         name="SCM_DO_BUILD_DURING_DEPLOYMENT", value="true"
+                    ),
+                    # Run Alembic migrations after build completes (official recommended approach)
+                    web.NameValuePairArgs(
+                        name="POST_BUILD_COMMAND", value="alembic upgrade head"
                     ),
                     # Add database connection string if provided
                     *(

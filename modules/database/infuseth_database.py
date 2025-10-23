@@ -141,7 +141,8 @@ class InfusethDatabase:
         )
 
         # Build connection string as a Pulumi secret
-        # Format: postgresql://username:password@hostname:port/database?sslmode=require
+        # Format: postgresql+psycopg://username:password@hostname:port/database?sslmode=require
+        # The +psycopg driver specifier is required for SQLAlchemy/SQLModel with psycopg3
         connection_string = pulumi.Output.all(
             server_fqdn,
             admin_username,
@@ -149,7 +150,7 @@ class InfusethDatabase:
             database_name,
         ).apply(
             lambda args: pulumi.Output.secret(
-                f"postgresql://{args[1]}:{args[2]}@{args[0]}:5432/{args[3]}?sslmode=require"
+                f"postgresql+psycopg://{args[1]}:{args[2]}@{args[0]}:5432/{args[3]}?sslmode=require"
             )
         )
 
