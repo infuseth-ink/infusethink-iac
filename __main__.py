@@ -5,6 +5,9 @@ import pulumi
 from config import load_config
 from modules.backend.infuseth_backend import InfusethBackend
 from modules.database.infuseth_database import InfusethDatabase
+
+# Import DNS module (only used in prod, but imported to avoid linter warnings)
+from modules.dns.azure_dns_zone import AzureDnsZone
 from modules.frontend.infuseth_frontend import InfusethFrontend
 from modules.shared.infusethink_resource_group import InfusethinkResourceGroup
 
@@ -75,6 +78,69 @@ backend_app_service_plan, backend_web_app = InfusethBackend.sync(
     database_connection_string=connection_string,
     tags=shared_config["tags"],
 )
+
+# ============================================
+# DNS Zone (Production only)
+# ============================================
+
+# Only create DNS zone in production (not dev/staging)
+if env_config == "prod" and "dns" in config:
+    dns_config = config["dns"]
+
+    # Create Azure DNS Zone for domain management
+    dns_zone = AzureDnsZone.sync(
+        name="infuseth-dns-zone",
+        resource_group_name=resource_group.name,
+        location=location,
+        domain_name=dns_config["domain_name"],
+        tags={
+            "Environment": env_config,
+            **shared_config["tags"],
+        },
+    )
+
+    # MX Records - Routes incoming email to Namecheap's mail servers
+    email_mx_records = AzureDnsZone.create_mx_record(
+        name="email-mx-records",
+        resource_group_name=resource_group.name,
+        zone_name=dns_zone.name,
+        record_name="@",
+        mail_exchanges=dns_config["email"]["mx_records"],
+        ttl=3600,
+    )
+
+    # SPF Record - Prevents email spoofing
+    email_spf_record = AzureDnsZone.create_txt_record(
+        name="email-spf-record",
+        resource_group_name=resource_group.name,
+        zone_name=dns_zone.name,
+        record_name="@",
+        txt_value=dns_config["email"]["spf"],
+        ttl=3600,
+    )
+
+    # DKIM Record - Cryptographic signing (split into chunks for Azure DNS 255 char limit)
+    email_dkim_record = AzureDnsZone.create_txt_record(
+        name="email-dkim-record",
+        resource_group_name=resource_group.name,
+        zone_name=dns_zone.name,
+        record_name="default._domainkey",
+        txt_value=dns_config["email"]["dkim"],
+        ttl=3600,
+    )
+
+    # DMARC Record - Email policy and reporting
+    email_dmarc_record = AzureDnsZone.create_txt_record(
+        name="email-dmarc-record",
+        resource_group_name=resource_group.name,
+        zone_name=dns_zone.name,
+        record_name="_dmarc",
+        txt_value=dns_config["email"]["dmarc"],
+        ttl=3600,
+    )
+
+    # Export DNS zone name for prod
+    pulumi.export("dns_zone_name", dns_zone.name)
 
 # Export important values
 pulumi.export("environment", env_config)
