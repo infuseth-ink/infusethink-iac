@@ -21,36 +21,56 @@ class InfusethFrontend:
         environment: str,
         app_name: str,
         sku_tier: AppServiceSku = "F1",
+        custom_domain: str | None = None,
+        shared_app_service_plan: web.AppServicePlan | None = None,
         tags: dict[str, str] | None = None,
     ) -> tuple[web.AppServicePlan, web.WebApp]:
-        """Create an App Service Plan and Web App for Flutter hosting."""
+        """Create an App Service Plan and Web App for Flutter hosting.
 
-        # Create App Service Plan
-        app_service_plan = web.AppServicePlan(
-            f"asp-{app_name}",
-            resource_group_name=resource_group_name,
-            location=location,
-            # TODO: for prod we plan to share the ASP across FE and BE, so name using the resource group
-            name=f"asp-{app_name}",
-            kind="linux",
-            reserved=True,
-            sku={
-                "name": sku_tier,
-                "tier": "Free"
-                if sku_tier == "F1"
-                else "Basic"
-                if sku_tier.startswith("B")
-                else "Standard"
-                if sku_tier.startswith("S")
-                else "Premium",
-            },
-            tags={
-                "Environment": environment,
-                "Component": "Frontend-Plan",
-                "Application": "Infusethink",
-                **(tags or {}),
-            },
-        )
+        Args:
+            name: Pulumi resource name
+            resource_group_name: Resource group
+            location: Azure region
+            environment: Environment name
+            app_name: App Service name
+            sku_tier: App Service Plan SKU
+            custom_domain: Optional custom domain (e.g., "app.infuseth.ink")
+            shared_app_service_plan: Optional existing App Service Plan to reuse
+            tags: Optional tags
+
+        Returns:
+            Tuple of (App Service Plan, Web App)
+        """
+
+        # Use shared plan if provided, otherwise create new one
+        if shared_app_service_plan:
+            app_service_plan = shared_app_service_plan
+        else:
+            # Create App Service Plan
+            app_service_plan = web.AppServicePlan(
+                f"asp-{app_name}",
+                resource_group_name=resource_group_name,
+                location=location,
+                name=f"asp-{app_name}",
+                kind="linux",
+                reserved=True,
+                sku={
+                    "name": sku_tier,
+                    "tier": "Free"
+                    if sku_tier == "F1"
+                    else "Basic"
+                    if sku_tier.startswith("B")
+                    else "Standard"
+                    if sku_tier.startswith("S")
+                    else "Premium",
+                },
+                tags={
+                    "Environment": environment,
+                    "Component": "Frontend-Plan",
+                    "Application": "Infusethink",
+                    **(tags or {}),
+                },
+            )
 
         # Create Web App
         web_app = web.WebApp(

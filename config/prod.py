@@ -8,14 +8,14 @@ ENVIRONMENT = "prod"
 # Frontend configuration (Azure App Service)
 FRONTEND_CONFIG = {
     "app_name": "infusethink-app",
-    "sku_tier": "F1",  # App Service SKU (F1 is free tier)
-    "custom_domain": "www.infuseth.ink",
+    "sku_tier": "B1",  # Basic tier required for custom domains
+    "custom_domain": "app.infuseth.ink",
 }
 
 # Backend configuration (Azure App Service)
 BACKEND_CONFIG = {
     "app_name": "infusethink-api",
-    "sku_tier": "F1",  # App Service SKU (F1 is free tier)
+    "sku_tier": "B1",  # Basic tier required for custom domains
     "custom_domain": "api.infuseth.ink",
 }
 
