@@ -108,8 +108,21 @@ class AzureDnsZone:
         Returns:
             The created TXT record resource
         """
+
         # Handle both single string and list of strings
-        value_list = [txt_value] if isinstance(txt_value, str) else txt_value
+        # When txt_value is a Pulumi Output, we need to use apply() to transform it
+        def ensure_list(
+            value: pulumi.Input[str] | pulumi.Input[list[str]],
+        ) -> list[str]:
+            if isinstance(value, str):
+                return [value]
+            elif isinstance(value, list):
+                return value
+            else:
+                # For other Input types, return as-is (will be resolved by Pulumi)
+                return [value]  # type: ignore
+
+        value_list = pulumi.Output.from_input(txt_value).apply(ensure_list)
 
         return dns.RecordSet(
             name,

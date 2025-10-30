@@ -22,34 +22,53 @@ class InfusethBackend:
         app_name: str,
         sku_tier: AppServiceSku = "F1",
         database_connection_string: pulumi.Input[str] | None = None,
+        shared_app_service_plan: web.AppServicePlan | None = None,
+        custom_domain: str | None = None,
         tags: dict[str, str] | None = None,
     ) -> tuple[web.AppServicePlan, web.WebApp]:
-        """Create an App Service Plan and Web App for FastAPI backend hosting."""
+        """Create an App Service Plan and Web App for FastAPI backend hosting.
 
-        # Create App Service Plan for backend
-        app_service_plan = web.AppServicePlan(
-            f"asp-{app_name}",
-            resource_group_name=resource_group_name,
-            location=location,
-            name=f"asp-{app_name}",
-            kind="linux",
-            reserved=True,
-            sku={
-                "name": sku_tier,
-                "tier": "Free"
-                if sku_tier == "F1"
-                else "Basic"
-                if sku_tier.startswith("B")
-                else "Standard"
-                if sku_tier.startswith("S")
-                else "Premium",
-            },
-            tags={
-                "Environment": environment,
-                "Component": "Backend-Plan",
-                "Application": "Infusethink",
-                **(tags or {}),
-            },
+        Args:
+            name: Pulumi resource name
+            resource_group_name: Azure resource group name
+            location: Azure region location
+            environment: Environment name (dev, prod)
+            app_name: App Service name
+            sku_tier: App Service Plan SKU tier
+            database_connection_string: Optional database connection string
+            shared_app_service_plan: Optional existing App Service Plan to reuse
+            custom_domain: Optional custom domain for hostname binding (requires B1+)
+            tags: Optional resource tags
+        """
+
+        # Create or reuse App Service Plan
+        app_service_plan = (
+            shared_app_service_plan
+            if shared_app_service_plan
+            else web.AppServicePlan(
+                f"asp-{app_name}",
+                resource_group_name=resource_group_name,
+                location=location,
+                name=f"asp-{app_name}",
+                kind="linux",
+                reserved=True,
+                sku={
+                    "name": sku_tier,
+                    "tier": "Free"
+                    if sku_tier == "F1"
+                    else "Basic"
+                    if sku_tier.startswith("B")
+                    else "Standard"
+                    if sku_tier.startswith("S")
+                    else "Premium",
+                },
+                tags={
+                    "Environment": environment,
+                    "Component": "Backend-Plan",
+                    "Application": "Infusethink",
+                    **(tags or {}),
+                },
+            )
         )
 
         # Create Web App for FastAPI backend

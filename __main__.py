@@ -44,6 +44,32 @@ resource_group = InfusethinkResourceGroup.sync(
     "infusethink", location=location, environment=env_config, tags=shared_config["tags"]
 )
 
+# Create shared App Service Plan for production (to save costs)
+# In prod, both frontend and backend share a single B1 plan (~$13/month total vs ~$26 for two)
+# In dev, each service gets its own F1 free plan
+shared_app_service_plan = None
+if env_config == "prod":
+    from pulumi_azure_native import web
+
+    shared_app_service_plan = web.AppServicePlan(
+        "asp-shared-prod",
+        resource_group_name=resource_group.name,
+        location=location,
+        name="asp-infusethink-prod",
+        kind="linux",
+        reserved=True,
+        sku={
+            "name": "B1",
+            "tier": "Basic",
+        },
+        tags={
+            "Environment": env_config,
+            "Component": "Shared-Plan",
+            "Application": "Infusethink",
+            **shared_config["tags"],
+        },
+    )
+
 # Create frontend (App Service)
 frontend_app_service_plan, frontend_web_app = InfusethFrontend.sync(
     "frontend",
@@ -52,6 +78,8 @@ frontend_app_service_plan, frontend_web_app = InfusethFrontend.sync(
     environment=env_config,
     app_name=frontend_config["app_name"],
     sku_tier=frontend_config["sku_tier"],
+    shared_app_service_plan=shared_app_service_plan,
+    custom_domain=frontend_config.get("custom_domain"),
     tags=shared_config["tags"],
 )
 
@@ -76,6 +104,8 @@ backend_app_service_plan, backend_web_app = InfusethBackend.sync(
     app_name=backend_config["app_name"],
     sku_tier=backend_config["sku_tier"],
     database_connection_string=connection_string,
+    shared_app_service_plan=shared_app_service_plan,
+    custom_domain=backend_config.get("custom_domain"),
     tags=shared_config["tags"],
 )
 
@@ -138,6 +168,115 @@ if env_config == "prod" and "dns" in config:
         txt_value=dns_config["email"]["dmarc"],
         ttl=3600,
     )
+
+    # CNAME Record - Frontend custom domain (app.infuseth.ink → Azure App Service)
+    frontend_cname_record = AzureDnsZone.create_cname_record(
+        name="frontend-cname",
+        resource_group_name=resource_group.name,
+        zone_name=dns_zone.name,
+        record_name="app",
+        cname_target=frontend_web_app.default_host_name,
+        ttl=3600,
+    )
+
+    # CNAME Record - Backend custom domain (api.infuseth.ink → Azure App Service)
+    backend_cname_record = AzureDnsZone.create_cname_record(
+        name="backend-cname",
+        resource_group_name=resource_group.name,
+        zone_name=dns_zone.name,
+        record_name="api",
+        cname_target=backend_web_app.default_host_name,
+        ttl=3600,
+    )
+
+    # TXT Record - Domain verification for frontend (asuid.app.infuseth.ink)
+    # Cast Output to handle potential None value
+    frontend_verification_id = pulumi.Output.all(
+        frontend_web_app.custom_domain_verification_id
+    ).apply(lambda ids: ids[0] if ids[0] else "")
+    frontend_verification_record = AzureDnsZone.create_txt_record(
+        name="frontend-verification",
+        resource_group_name=resource_group.name,
+        zone_name=dns_zone.name,
+        record_name="asuid.app",
+        txt_value=frontend_verification_id,
+        ttl=3600,
+    )
+
+    # TXT Record - Domain verification for backend (asuid.api.infuseth.ink)
+    backend_verification_id = pulumi.Output.all(
+        backend_web_app.custom_domain_verification_id
+    ).apply(lambda ids: ids[0] if ids[0] else "")
+    backend_verification_record = AzureDnsZone.create_txt_record(
+        name="backend-verification",
+        resource_group_name=resource_group.name,
+        zone_name=dns_zone.name,
+        record_name="asuid.api",
+        txt_value=backend_verification_id,
+        ttl=3600,
+    )
+
+    # Import web module for hostname bindings
+    from pulumi_azure_native import web
+
+    # At this point, shared_app_service_plan is guaranteed to be non-None (we're in prod)
+    assert shared_app_service_plan is not None, (
+        "shared_app_service_plan must exist in prod"
+    )
+
+    # Custom domain binding for frontend with managed SSL certificate
+    if frontend_config.get("custom_domain"):
+        # Create free managed certificate (Azure will create temp binding internally for validation)
+        frontend_certificate = web.Certificate(
+            "frontend-managed-cert",
+            resource_group_name=resource_group.name,
+            name=f"{frontend_config['custom_domain']}-cert",
+            location=location,
+            canonical_name=frontend_config["custom_domain"],
+            server_farm_id=shared_app_service_plan.id,
+            opts=pulumi.ResourceOptions(
+                depends_on=[frontend_verification_record, frontend_cname_record]
+            ),
+        )
+
+        # Bind hostname with SSL enabled using the managed certificate
+        frontend_hostname_binding = web.WebAppHostNameBinding(
+            "frontend-custom-domain",
+            resource_group_name=resource_group.name,
+            name=frontend_web_app.name,
+            host_name=frontend_config["custom_domain"],
+            site_name=frontend_web_app.name,
+            ssl_state=web.SslState.SNI_ENABLED,
+            thumbprint=frontend_certificate.thumbprint,
+            opts=pulumi.ResourceOptions(depends_on=[frontend_certificate]),
+        )
+
+    # Custom domain binding for backend with managed SSL certificate
+    if backend_config.get("custom_domain"):
+        # Create free managed certificate (Azure will create temp binding internally for validation)
+        backend_certificate = web.Certificate(
+            "backend-managed-cert",
+            resource_group_name=resource_group.name,
+            name=f"{backend_config['custom_domain']}-cert",
+            location=location,
+            canonical_name=backend_config["custom_domain"],
+            server_farm_id=shared_app_service_plan.id,
+            opts=pulumi.ResourceOptions(
+                depends_on=[backend_verification_record, backend_cname_record]
+            ),
+        )
+
+        # Bind hostname with SSL enabled using the managed certificate
+        backend_hostname_binding = web.WebAppHostNameBinding(
+            "backend-custom-domain",
+            resource_group_name=resource_group.name,
+            name=backend_web_app.name,
+            host_name=backend_config["custom_domain"],
+            site_name=backend_web_app.name,
+            ssl_state=web.SslState.SNI_ENABLED,
+            thumbprint=backend_certificate.thumbprint,
+            opts=pulumi.ResourceOptions(depends_on=[backend_certificate]),
+        )
 
     # Export DNS zone name for prod
     pulumi.export("dns_zone_name", dns_zone.name)
