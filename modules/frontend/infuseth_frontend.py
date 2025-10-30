@@ -79,6 +79,7 @@ class InfusethFrontend:
             location=location,
             name=app_name,
             server_farm_id=app_service_plan.id,
+            https_only=True,  # Automatically redirect all HTTP requests to HTTPS
             site_config=web.SiteConfigArgs(
                 # TODO: Migrate to NODE|24-lts once Azure App Service adds support
                 linux_fx_version="NODE|22-lts",

@@ -78,6 +78,7 @@ class InfusethBackend:
             location=location,
             name=f"{app_name}",
             server_farm_id=app_service_plan.id,
+            https_only=True,  # Redirect HTTP to HTTPS
             site_config=web.SiteConfigArgs(
                 # Python 3.13 runtime for FastAPI
                 linux_fx_version="PYTHON|3.13",
