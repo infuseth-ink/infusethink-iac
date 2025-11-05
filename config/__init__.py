@@ -17,6 +17,10 @@ def load_config() -> dict[str, Any]:
         from .dev import get_config
 
         return get_config()
+    elif stack == "prod":
+        from .prod import get_config
+
+        return get_config()
     else:
-        msg = f"Unknown stack: {stack}. Currently only 'dev' stack is supported."
+        msg = f"Unknown stack: {stack}. Supported stacks: 'dev', 'prod'"
         raise ValueError(msg)
