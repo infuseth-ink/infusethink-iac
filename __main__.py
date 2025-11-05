@@ -1,6 +1,7 @@
 """Infuseth.ink Infrastructure as Code with Pulumi and Azure - Frontend and Backend."""
 
 import pulumi
+from pulumi_azure_native import web
 
 from config import load_config
 from modules.backend.infuseth_backend import InfusethBackend
@@ -280,6 +281,27 @@ if env_config == "prod" and "dns" in config:
 
     # Export DNS zone name for prod
     pulumi.export("dns_zone_name", dns_zone.name)
+
+# ============================================
+# GitHub Actions Deployment Credentials
+# ============================================
+
+# Export backend publish profile for GitHub Actions deployment
+# This allows the backend repo to deploy without needing a Service Principal
+# Azure provides the full XML publish profile
+backend_publish_profile = pulumi.Output.all(
+    resource_group.name, backend_web_app.name
+).apply(
+    lambda args: web.list_web_app_publishing_credentials_output(
+        resource_group_name=args[0], name=args[1]
+    )
+)
+
+# Export the publish profile XML as a secret (contains deployment credentials)
+pulumi.export(
+    "backend_publish_profile_xml",
+    pulumi.Output.secret(backend_publish_profile.publishing_profile_xml),
+)
 
 # Export important values
 pulumi.export("environment", env_config)
