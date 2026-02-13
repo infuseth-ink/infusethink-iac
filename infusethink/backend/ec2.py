@@ -5,6 +5,15 @@ import pulumi_aws as aws
 class AwsEc2Backend(pulumi.ComponentResource):
     """AWS EC2 backend factory for Infusethink."""
 
+    instance: aws.ec2.Instance
+    """EC2 instance resource."""
+
+    instance_id: pulumi.Output[str]
+    """ID of the EC2 instance."""
+
+    public_ip: pulumi.Output[str]
+    """Public IP address of the EC2 instance."""
+
     def __init__(
         self,
         name: str,
