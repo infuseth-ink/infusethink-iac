@@ -123,4 +123,5 @@ class AwsEc2Backend(pulumi.ComponentResource):
                     description="Allow all outbound traffic",
                 ),
             ],
+            opts=child_opts,
         )
