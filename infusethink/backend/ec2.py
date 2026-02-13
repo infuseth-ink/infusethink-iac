@@ -18,6 +18,7 @@ class AwsEc2Backend(pulumi.ComponentResource):
         self,
         name: str,
         instance_type: str,
+        ssh_key_name: str | None = None,
         opts: pulumi.ResourceOptions | None = None,
     ):
         """
@@ -26,6 +27,7 @@ class AwsEc2Backend(pulumi.ComponentResource):
         Args:
             name: Pulumi resource name
             instance_type: EC2 instance type (e.g., "t3.micro")
+            ssh_key_name: Optional SSH key name for the instance
             opts: Optional Pulumi resource options
         """
         super().__init__(
@@ -55,6 +57,7 @@ class AwsEc2Backend(pulumi.ComponentResource):
             f"{name}-instance",
             instance_type=instance_type,
             ami=amazon_linux.id,
+            key_name=ssh_key_name,
             vpc_security_group_ids=[security_group.id],
             tags={
                 "Name": f"{name}-backend",
