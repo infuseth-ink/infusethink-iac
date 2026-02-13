@@ -153,7 +153,8 @@ exclude = [
     "**/node_modules",
     ".venv",
     ".git",
-    "**/.pytest_cache"
+    "**/.pytest_cache",
+    "legacy-azure/**"
 ]
 
 # Type checking configuration
