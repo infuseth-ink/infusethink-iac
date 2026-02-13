@@ -1,7 +1,5 @@
 """Infuseth.ink Infrastructure as Code with Pulumi and Azure - Frontend and Backend."""
 
-import pulumi
-
 from config import load_config
 from modules.backend.infuseth_backend import InfusethBackend
 from modules.database.infuseth_database import InfusethDatabase
@@ -10,6 +8,7 @@ from modules.database.infuseth_database import InfusethDatabase
 from modules.dns.azure_dns_zone import AzureDnsZone
 from modules.frontend.infuseth_frontend import InfusethFrontend
 from modules.shared.infusethink_resource_group import InfusethinkResourceGroup
+import pulumi
 
 # Load environment-specific configuration
 config = load_config()
