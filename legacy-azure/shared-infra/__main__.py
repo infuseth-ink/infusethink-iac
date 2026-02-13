@@ -6,10 +6,9 @@ import sys
 # Add parent directory to path to import modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from modules.database.infuseth_database import InfusethDatabaseServer
 import pulumi
 from pulumi_azure_native import resources
-
-from modules.database.infuseth_database import InfusethDatabaseServer
 
 # Get Azure location from Pulumi config
 azure_config = pulumi.Config("azure-native")
