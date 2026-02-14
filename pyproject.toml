@@ -194,3 +194,37 @@ reportShadowedImports = true
 reportUnsupportedDunderAll = true
 reportUnusedCallResult = false  # Too noisy for many codebases
 reportUnusedCoroutine = true
+
+reportUnnecessaryTypeIgnoreComment = "error"
+reportUndefinedVariable = "error"
+reportGeneralTypeIssues = "error"
+reportAttributeAccessIssue = "error"
+reportUninitializedInstanceVariable = "error"
+
+# Catch missing return type annotations
+reportUnknownMemberType = "error"
+reportUnknownArgumentType = "error"
+reportUnknownVariableType = "error"
+reportUnknownLambdaType = "error"
+
+# Catch implicit string concatenation bugs
+reportImplicitStringConcatenation = "error"
+
+# Catch calls to deprecated functions
+reportDeprecated = "warning"
+
+# Catch potential index out of bounds
+reportPossiblyUnboundVariable = "error"
+
+# Catch incomplete type stubs
+reportIncompleteFunctionType = "error"
+reportIncompleteStub = "warning"
+
+# Catch missing @override decorator (Python 3.12+)
+reportImplicitOverride = "warning"
+
+# Catch match statement issues
+reportMatchNotExhaustive = "error"
+
+# Catch invalid type annotations
+reportInvalidTypeForm = "error"
