@@ -1,5 +1,6 @@
 import pulumi
 
+from infusethink.backend.caddy import generate_user_data
 from infusethink.backend.ec2 import AwsEc2Backend
 from infusethink.dns.records import (
     create_a_record,
@@ -10,10 +11,17 @@ from infusethink.dns.records import (
 )
 from infusethink.dns.route53 import AwsRoute53Zone
 
+config = pulumi.Config()
+backend_subdomain = config.require("backend_subdomain")
+
 DOMAIN_NAME = "infuseth.ink"
+backend_domain = f"{backend_subdomain}.{DOMAIN_NAME}"
 
 backend = AwsEc2Backend(
-    "infusethink-backend", ssh_key_name="infusethink-backend", instance_type="t3.micro"
+    "infusethink-backend",
+    ssh_key_name="infusethink-backend",
+    instance_type="t3.micro",
+    user_data=generate_user_data(domain=backend_domain, backend_port=8000),
 )
 dns_zone = AwsRoute53Zone("infusethink-dns", domain_name="infuseth.ink")
 
@@ -47,10 +55,10 @@ dmarc_record = create_dmarc_record(
     name="email-dmarc",
 )
 
-# subdoamin for backend EC2 instance
+# subdomain for backend EC2 instance
 a_record = create_a_record(
     zone_id=dns_zone.zone_id,
-    record_name="backstage.infuseth.ink",
+    record_name=backend_domain,
     ip_address=backend.public_ip,
     name="backend-a-record",
 )
