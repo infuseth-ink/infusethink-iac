@@ -19,6 +19,7 @@ class AwsEc2Backend(pulumi.ComponentResource):
         name: str,
         instance_type: str,
         ssh_key_name: str | None = None,
+        user_data: str | None = None,
         opts: pulumi.ResourceOptions | None = None,
     ):
         """
@@ -28,6 +29,7 @@ class AwsEc2Backend(pulumi.ComponentResource):
             name: Pulumi resource name
             instance_type: EC2 instance type (e.g., "t3.micro")
             ssh_key_name: Optional SSH key name for the instance
+            user_data: Optional user data script for the instance
             opts: Optional Pulumi resource options
         """
         super().__init__(
@@ -53,6 +55,11 @@ class AwsEc2Backend(pulumi.ComponentResource):
         )
         security_group = self.__create_security_group(child_opts)
 
+        instance_opts = pulumi.ResourceOptions(
+            parent=self,
+            replace_on_changes=["user_data"],
+        )
+
         self.instance = aws.ec2.Instance(
             f"{name}-instance",
             instance_type=instance_type,
@@ -62,7 +69,8 @@ class AwsEc2Backend(pulumi.ComponentResource):
             tags={
                 "Name": f"{name}-backend",
             },
-            opts=child_opts,
+            user_data=user_data,
+            opts=instance_opts,
         )
 
         self.instance_id = self.instance.id
