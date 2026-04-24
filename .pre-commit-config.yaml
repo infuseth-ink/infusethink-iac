@@ -1,14 +1,12 @@
 ---
 # Pre-commit hooks for code quality and consistency
 # See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
 
-# Configure default behavior
 default_install_hook_types: [pre-commit, commit-msg]
 default_stages: [pre-commit]
 
 repos:
-  # Pre-commit's own hooks for basic file checks
+  # Basic file hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -28,47 +26,41 @@ repos:
       - id: check-added-large-files
         name: Check for large files
         args: [--maxkb=1000]
-      - id: debug-statements
-        name: Check for debug statements
 
-  # Ruff for Python linting and formatting (replaces Black, isort, flake8, etc.)
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.3
-    hooks:
-      # Run the linter
-      - id: ruff
-        name: Ruff linter
-        args: [--fix]
-        types: [python]
-      # Run the formatter
-      - id: ruff-format
-        name: Ruff formatter
-        types: [python]
-
-  # Pyright for type checking
+  # Local hooks (tools managed by mise + uv tool)
   - repo: local
     hooks:
-      - id: pyright
-        name: Pyright type checker
-        entry: pyright
+      # HCL formatting
+      - id: terraform-fmt
+        name: terraform fmt
+        entry: terraform fmt -check -diff -recursive
         language: system
-        types: [python]
+        files: \.tf$
         pass_filenames: false
 
-  # Commitizen for commit message validation
+      # HCL linting
+      - id: tflint
+        name: tflint
+        entry: tflint --recursive
+        language: system
+        files: \.tf$
+        pass_filenames: false
+
+      # Markdown + TOML + JSON formatting
+      - id: dprint
+        name: dprint check
+        entry: uv run dprint check
+        language: system
+        files: \.(md|toml|json)$
+        pass_filenames: false
+
+  # Commit message validation (gitmoji conventional commits)
   - repo: https://github.com/ljnsn/cz-conventional-gitmoji
     rev: v0.7.0
     hooks:
       - id: conventional-gitmoji
 
-  # Additional Python-specific checks
-  - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.5.8
-    hooks:
-      - id: uv-lock
-        name: Check uv lock file is up to date
-
-# Configure CI mode for faster execution
+# pre-commit.ci config (no-op for local-only hooks but harmless)
 ci:
   autofix_commit_msg: |
     [pre-commit.ci] auto fixes from pre-commit.com hooks
@@ -78,5 +70,5 @@ ci:
   autoupdate_branch: ''
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
   autoupdate_schedule: weekly
-  skip: []
+  skip: [terraform-fmt, tflint, dprint]
   submodules: false
