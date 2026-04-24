@@ -42,4 +42,4 @@ docker run -d \
   --network host \
   -v /etc/caddy:/etc/caddy \
   -v caddy_data:/data \
-  caddy:latest
+  caddy:2.11.2
