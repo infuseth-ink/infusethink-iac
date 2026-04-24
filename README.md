@@ -149,8 +149,9 @@ Each workspace exports:
 Tool responsibilities are split by type:
 
 - **mise** — versioned Go binaries: `terraform`, `tflint`, `uv`
-- **uv tool** — Python CLIs: `pre-commit`, `commitizen` + `cz-conventional-gitmoji`
-  - Installed via `mise run setup`; no venv or `pyproject.toml` needed
+- **uv** — Python CLIs via `pyproject.toml` dep-groups: `pre-commit`, `commitizen`,
+  `cz-conventional-gitmoji`, `dprint-py`
+  - Installed via `mise run setup` (`uv sync --group dev` + `pre-commit install`)
 
 Formatting and linting:
 
