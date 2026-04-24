@@ -2,37 +2,6 @@
 # Replaces the Pulumi AwsRoute53Zone component and all create_*_record functions.
 # All resources imported from existing AWS infrastructure — no DNS repropagation.
 
-import {
-  to = aws_route53_zone.main
-  id = "Z00982262VVBPSLWSIJ10"
-}
-
-import {
-  to = aws_route53_record.mx
-  id = "Z00982262VVBPSLWSIJ10_infuseth.ink_MX"
-}
-
-import {
-  to = aws_route53_record.spf
-  id = "Z00982262VVBPSLWSIJ10_infuseth.ink_TXT"
-}
-
-import {
-  to = aws_route53_record.dkim
-  id = "Z00982262VVBPSLWSIJ10_default._domainkey.infuseth.ink_TXT"
-}
-
-import {
-  to = aws_route53_record.dmarc
-  id = "Z00982262VVBPSLWSIJ10__dmarc.infuseth.ink_TXT"
-}
-
-import {
-  to = aws_route53_record.backend_a
-  id = "Z00982262VVBPSLWSIJ10_backstage.infuseth.ink_A"
-}
-
-# ---------------------------------------------------------------------------
 
 resource "aws_route53_zone" "main" {
   name = "infuseth.ink"
