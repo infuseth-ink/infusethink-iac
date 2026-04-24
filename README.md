@@ -1,389 +1,276 @@
 # Infuseth.ink Infrastructure as Code
 
-Infrastructure as Code for Infuseth.ink using Pulumi and Azure. This project manages a cost-optimized multi-environment setup with separate frontend (Node.js) and backend (Python FastAPI) services, sharing a single PostgreSQL server across all environments.
+> **Note:** This repo is being migrated from Pulumi (Azure) to Terraform (AWS).
+> This README reflects the target state.
+
+Infrastructure as Code for [Infuseth.ink](https://infuseth.ink) using Terraform on AWS.
+Manages the backend (Python FastAPI) on EC2 and DNS via Route53.
+Frontend (Next.js) is hosted separately — Netlify or Amplify Hosting are candidates.
 
 ## 🏗️ Architecture Overview
 
-This infrastructure supports a modular, multi-environment setup with separate frontend and backend services, using a **shared PostgreSQL server** architecture for cost optimization.
+This infrastructure supports a modular, multi-environment setup.
+Each environment runs the backend on a single EC2 instance with Caddy handling TLS.
+The frontend is deployed separately.
 
 ### Core Architecture
 
 ```mermaid
 graph TB
-    subgraph shared["Shared Infrastructure (rg-infusethink-shared)"]
-        pg["PostgreSQL Flexible Server<br/>psql-infusethink<br/>Standard_B1ms"]
-        db_dev["infusethink_dev"]
-        db_staging["infusethink_staging"]
-        db_prod["infusethink_prod"]
-
-        pg --> db_dev
-        pg --> db_staging
-        pg --> db_prod
+    subgraph prod["Production"]
+        direction TB
+        fe_prod["Frontend host TBD<br/>app.infuseth.ink"]
+        caddy_prod["EC2 t3.micro + Caddy<br/>api.infuseth.ink"]
+        fe_prod -->|API calls| caddy_prod
     end
 
-    subgraph dev["Dev Stack (rg-infusethink-dev)"]
-        fe_dev["Frontend App Service<br/>Node.js 22<br/>infusethink-trials"]
-        be_dev["Backend App Service<br/>Python 3.13 + FastAPI<br/>infusethink-labs"]
+    subgraph staging["Staging"]
+        direction TB
+        fe_stg["Frontend host TBD<br/>demo.infuseth.ink"]
+        caddy_stg["EC2 t3.micro + Caddy<br/>backstage.infuseth.ink"]
+        fe_stg -->|API calls| caddy_stg
     end
 
-    subgraph staging["Staging Stack (rg-infusethink-staging)"]
-        fe_stg["Frontend App Service<br/>Node.js 22<br/>infusethink-demo"]
-        be_stg["Backend App Service<br/>Python 3.13 + FastAPI<br/>infusethink-backstage"]
+    subgraph dev["Development"]
+        direction TB
+        fe_dev["Frontend host TBD<br/>wip.infuseth.ink"]
+        caddy_dev["EC2 t3.micro + Caddy<br/>labs.infuseth.ink"]
+        fe_dev -->|API calls| caddy_dev
     end
 
-    subgraph prod["Production Stack (rg-infusethink-prod)"]
-        fe_prod["Frontend App Service<br/>Node.js 22<br/>app.infuseth.ink"]
-        be_prod["Backend App Service<br/>Python 3.13 + FastAPI<br/>api.infuseth.ink"]
+    subgraph dns["Route53 (infuseth.ink)"]
+        r53["Hosted Zone<br/>+ MX, SPF, DKIM, DMARC"]
     end
 
-    db_dev -.->|DATABASE_URL| be_dev
-    db_staging -.->|DATABASE_URL| be_stg
-    db_prod -.->|DATABASE_URL| be_prod
+    r53 --> fe_prod & fe_stg & fe_dev
 
-    style shared fill:#e1f5ff
-    style dev fill:#f0f9ff
-    style staging fill:#fef3c7
     style prod fill:#fee2e2
-    style pg fill:#7dd3fc
+    style staging fill:#fef3c7
+    style dev fill:#dcfce7
+    style dns fill:#e1f5ff
 ```
-
-**Cost Savings**: Sharing the PostgreSQL server reduces costs from ~$36/month (3 servers) to ~$12/month (1 server) - **67% savings**.
 
 ### Environment Plan
 
-#### Development
-- **Frontend**: `infusethink-trials.azurewebsites.net` (Node.js 22)
-- **Backend**: `infusethink-labs.azurewebsites.net` (Python 3.13 + FastAPI)
-- **Database**: `infusethink_dev` on shared PostgreSQL server
-- **Purpose**: Development testing - you can break it, minimal coordination needed
+> **Current scope:** Staging only. Dev and prod are planned but not yet deployed —
+> starting with one always-on instance avoids stop/start overhead while the stack is being established.
 
-#### Staging
-- **Frontend**: `infusethink-demo.azurewebsites.net` (Node.js 22)
-- **Backend**: `infusethink-backstage.azurewebsites.net` (Python 3.13 + FastAPI)
-- **Database**: `infusethink_staging` on shared PostgreSQL server
-- **Purpose**: QA and demo purposes - gatekeeps production
+#### Staging ✅ active
 
-#### Production
-- **Frontend**: `app.infuseth.ink` (custom domain) / `infusethink-app.azurewebsites.net` (Node.js 22)
-- **Backend**: `api.infuseth.ink` (custom domain) / `infusethink-api.azurewebsites.net` (Python 3.13 + FastAPI)
-- **Database**: `infusethink_prod` on shared PostgreSQL server
-- **Purpose**: Production environment
+- **Backend**: `backstage.infuseth.ink` (Python 3.13 + FastAPI, EC2)
+- **Frontend**: `demo.infuseth.ink` (Next.js, hosted separately — TBD)
+- **Purpose**: QA and demo purposes — the primary working environment
+
+#### Development 🔜 planned
+
+- **Backend**: `labs.infuseth.ink` (Python 3.13 + FastAPI, EC2)
+- **Frontend**: `wip.infuseth.ink` (Next.js, hosted separately — TBD)
+- **Purpose**: Experimental — push freely, minimal coordination needed
+
+#### Production 🔜 planned
+
+- **Backend**: `api.infuseth.ink` (Python 3.13 + FastAPI, EC2)
+- **Frontend**: `app.infuseth.ink` (Next.js, hosted separately — TBD)
+- **Purpose**: Production environment with custom domains and full monitoring
 
 ### Environment Notes
 
-- **dev**: Experimental environment where any developer can push with minimal coordination. Perfect for testing:
+- **dev**: Experimental environment where any developer can push with minimal coordination.
+  Perfect for testing:
   - Remote environment issues you're not confident testing locally
   - Cookie SameSite policies and cross-origin behavior
   - CDN and caching behavior
   - Sharing a possibly unstable version with team members or stakeholders
   - Offloading backend to free up laptop resources
-- **staging**: QA and demonstration environment. Changes require review and gatekeeps production from bugs
+- **staging**: QA and demonstration environment.
+  Changes require review and gatekeeps production from bugs.
   - Final QA testing before production
   - Client demonstrations and previews
 - **prod**: Production environment with custom domains and full monitoring
 
-### Azure Services Used
+### AWS Services Used
 
-- **Frontend**: Azure App Service (Free tier F1, Node.js 22-lts)
-- **Backend**: Azure App Service (Free tier F1, Python 3.13 + FastAPI + Gunicorn)
-- **Database**: Azure PostgreSQL Flexible Server v17 (Standard_B1ms burstable tier, ~$12/month shared)
+- **Compute**: EC2 t3.micro (Amazon Linux 2023, ap-southeast-1)
+- **Proxy**: Caddy (automatic HTTPS via Let's Encrypt)
+- **DNS**: Route53 hosted zone + A, MX, SPF, DKIM, DMARC records
+- **Access**: SSM Session Manager (no open SSH port)
+- **Secrets**: AWS Parameter Store
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-✅ Azure CLI authenticated (`az login`)
-✅ Pulumi CLI installed
-✅ Python 3.13+ with uv installed
-✅ Pulumi account configured
+✅ AWS CLI authenticated (`aws configure`)
+✅ [Session Manager plugin][ssm-plugin] installed
+✅ `mise install` (installs uv, Terraform, tflint)
+✅ `mise run setup` (installs pre-commit + commitizen via uv, sets up git hooks)
 
-### Step 1: Install Dependencies
+### Step 1: Deploy
 
 ```bash
-uv sync --dev
+terraform init
+terraform plan
+terraform apply
 ```
 
-### Step 2: Deploy Shared Infrastructure
-
-The shared infrastructure contains the PostgreSQL server that all environments use:
+### Step 2: Connect to EC2
 
 ```bash
-cd shared-infra
-
-# Initialize shared stack
-pulumi stack init shared
-
-# Configure Azure region
-pulumi config set azure-native:location eastasia
-
-# Set database admin password (secure, encrypted)
-pulumi config set --secret db_admin_password "YourSecurePassword123!"
-
-# Optional: customize admin username (default: infusethink_admin)
-# pulumi config set db_admin_username my_admin
-
-# Deploy shared PostgreSQL server
-pulumi up
-
-# Verify deployment
-pulumi stack output postgres_server_fqdn
-# Should show: psql-infusethink.postgres.database.azure.com
-
-cd ..
+aws ssm start-session --target $(terraform output -raw instance_id)
 ```
 
-**This creates:**
-- Resource group: `rg-infusethink-shared`
-- PostgreSQL Flexible Server v17: `psql-infusethink` (Standard_B1ms)
-- Firewall rule allowing Azure services
-
-### Step 3: Deploy Development Environment
+### Step 3: Verify
 
 ```bash
-# Initialize dev stack
-pulumi stack init dev
-
-# Configure Azure region
-pulumi config set azure-native:location eastasia
-
-# Deploy dev environment (no password needed - uses shared stack's password)
-pulumi up
-
-# Verify outputs
-pulumi stack output frontend_url
-# Should show: infusethink-trials.azurewebsites.net
-
-pulumi stack output backend_url
-# Should show: infusethink-labs.azurewebsites.net
-```
-
-**This creates (in rg-infusethink-dev):**
-- Frontend App Service (Node.js 22): `infusethink-trials`
-- Backend App Service (Python 3.13 + FastAPI): `infusethink-labs`
-- Database on shared server (in rg-infusethink-shared): `infusethink_dev`
-
-### Step 4: Test Your Deployment
-
-```bash
-# Test frontend
-curl https://$(pulumi stack output frontend_url)
-
-# Test backend health endpoint
-curl https://$(pulumi stack output backend_url)/health
-
-# Check database connection (if your backend has a DB test endpoint)
-curl https://$(pulumi stack output backend_url)/db/ping
-```
-
-### Step 5: Deploy Additional Environments (Optional)
-
-**Staging:**
-```bash
-pulumi stack init staging
-pulumi config set azure-native:location eastasia
-pulumi up
-```
-
-**Production:**
-```bash
-pulumi stack init prod
-pulumi config set azure-native:location eastasia
-pulumi up
+curl https://$(terraform output -raw backend_url)
 ```
 
 ## 🏗️ Technical Details
 
-### Stack References
+### Terraform Outputs
 
-Environment stacks automatically reference the shared stack using Pulumi Stack References:
+Each workspace exports:
 
-```python
-shared_stack = pulumi.StackReference(f"{org_name}/infusethink-shared/shared")
-postgres_server_name = shared_stack.require_output("postgres_server_name")
-postgres_server_fqdn = shared_stack.require_output("postgres_server_fqdn")
-shared_resource_group_name = shared_stack.require_output("resource_group_name")
-postgres_admin_password = shared_stack.require_output("postgres_admin_password")
-```
+- `instance_id` — EC2 instance ID (for SSM)
+- `public_ip` — EC2 public IP
+- `zone_id` — Route53 hosted zone ID
+- `name_servers` — NS records to set at registrar
+- `backend_url` — Backend domain
 
-**Important:** The password is stored in the shared stack and referenced by all environment stacks. This follows Pulumi best practices for managing secrets across stack boundaries.
+### Architecture Notes
 
-### Shared Stack Exports
-
-The shared infrastructure stack exports:
-- `resource_group_name`: Shared resource group name (`rg-infusethink-shared`)
-- `postgres_server_name`: PostgreSQL server name (`psql-infusethink`)
-- `postgres_server_fqdn`: PostgreSQL server FQDN
-- `postgres_admin_username`: Admin username
-- `postgres_admin_password`: Admin password (exported as secret)
-
-### Database Architecture
-
-- **1 PostgreSQL server** in `rg-infusethink-shared`
-- **3 databases** (infusethink_dev, infusethink_staging, infusethink_prod) created in the same shared resource group
-- Each environment references the shared server and creates its own isolated database
-- Connection strings are environment-specific and stored as Pulumi secrets
+- One EC2 instance per environment running the backend only
+- Caddy handles TLS automatically via Let's Encrypt
+- No port 22 open — access via SSM Session Manager only
+- Frontend (Next.js) hosted separately; Netlify and Amplify Hosting are candidates
 
 ## 🛠️ Development
 
-This project uses modern Python development tools:
+Tool responsibilities are split by type:
 
-- **Ruff**: Fast linting and formatting
-- **Pyright**: Static type checking
-- **Commitizen**: Conventional commit messages
-- **pre-commit**: Automated code quality checks
+- **mise** — versioned Go binaries: `terraform`, `tflint`, `uv`
+- **uv tool** — Python CLIs: `pre-commit`, `commitizen` + `cz-conventional-gitmoji`
+  - Installed via `mise run setup`; no venv or `pyproject.toml` needed
+
+Formatting and linting:
+
+- `terraform fmt` — HCL formatting
+- `tflint` — HCL linting
+- `pre-commit` — runs all checks on commit
 
 ### Commit Message Format
 
-Use conventional commits:
+Use conventional commits, and they'll automatically be Gitmojified:
 
 ```bash
-feat: add new Azure Static Web App module
-fix: resolve DNS configuration issue
+feat: add Route53 DKIM record
+fix: resolve security group ingress rule
 docs: update deployment guide
 ```
 
 Or use the interactive tool:
 
 ```bash
-cz commit
+uv run cz commit
 ```
 
 ## 📁 Project Structure
 
 ```
-├── __main__.py                    # Main Pulumi program (environment stacks)
-├── shared-infra/                  # Shared infrastructure stack
-│   ├── __main__.py               # Shared PostgreSQL server
-│   ├── Pulumi.yaml               # Shared stack config
-│   └── README.md                 # Shared infrastructure docs
-├── modules/                       # Reusable Pulumi modules
-│   ├── frontend/                 # App Service (Node.js 22) module
-│   ├── backend/                  # App Service (Python 3.13 + FastAPI) module
-│   ├── database/                 # PostgreSQL database module
-│   │   ├── InfusethDatabaseServer # Shared server provisioning
-│   │   └── InfusethDatabase       # Per-environment database
-│   └── shared/                   # Shared resources (resource groups)
-├── config/                        # Environment-specific configurations
-│   ├── dev.py                    # Development config
-│   ├── staging.py                # Staging config (to be created)
-│   └── prod.py                   # Production config (to be created)
-└── scripts/                       # Deployment and utility scripts
+├── providers.tf         # AWS provider + version constraints
+├── variables.tf         # Input variables
+├── terraform.tfvars     # Variable values (non-sensitive, committed)
+├── data.tf              # Data sources (AMI lookup)
+├── iam.tf               # IAM role + instance profile for SSM
+├── security_group.tf    # Ports 80 and 443 only
+├── ec2.tf               # EC2 instance
+├── user_data.sh         # Caddy setup script
+├── dns.tf               # Route53 zone + DNS records
+└── outputs.tf           # instance_id, public_ip, zone_id, name_servers
 ```
 
 ## 🔐 Security & Secrets
 
-- **Single Source of Truth**: Database password stored only in the shared stack
-- **Stack References**: Environment stacks reference the shared password via Pulumi Stack References
-- **Automatic Secret Propagation**: Pulumi automatically marks referenced secrets as secrets in environment stacks
-- Connection strings exported as secrets
-- Firewall configured for Azure services only
-- Admin credentials never appear in plain text
+- No secrets committed — `terraform.tfvars` contains non-sensitive config only
+- Sensitive values stored in AWS Parameter Store, referenced via `data "aws_ssm_parameter"`
+- Security group allows ports 80 and 443 only — no port 22
+- Instance access via SSM Session Manager (IAM-controlled)
 
-**Best Practice**: By using Stack References for the password, we ensure:
-1. One password to manage (in shared stack)
-2. Automatic secret encryption across all stacks
-3. No duplicate password configurations
-4. Easier password rotation (update once in shared stack)
+## 💰 Cost
 
-## 💰 Cost Optimization
+| Resource               | Scenario     | Monthly Cost  |
+| ---------------------- | ------------ | ------------- |
+| EC2 t3.micro (staging) | Running 24/7 | ~$8           |
+| Route53 hosted zone    | 1            | ~$0.50        |
+| **Total (current)**    |              | **~$9/month** |
 
-The shared PostgreSQL server architecture provides significant cost savings:
+When dev and prod are added, stopped instances accrue only EBS storage charges
+(~$0.10/GB/month × 8GB).
 
-| Resource | Quantity | Monthly Cost |
-|----------|----------|--------------|
-| App Service Plans (F1) | 6 (3 envs × 2 services) | **Free** |
-| PostgreSQL Server (Standard_B1ms) | 1 (shared) | ~$12 |
-| **Total** | | **~$12/month** |
-
-Without sharing the server, costs would be ~$36/month (3 servers × $12).
+> **Free tier:** 750 hours/month covers one **t3.micro** running 24/7.
+> Running all three environments simultaneously exhausts the allowance in ~10 days.
 
 ## 🔧 Troubleshooting
 
-### "No stack reference found"
+### "No such instance"
 
-**Solution:** Deploy shared infrastructure first (`cd shared-infra && pulumi up`)
+**Solution:** Run `terraform apply` first, then use `terraform output -raw instance_id`
 
-### "Database connection failed"
-
-**Solutions:**
-1. Verify firewall rules allow Azure services
-2. Check connection string format in stack outputs
-3. Verify database password is correct
-4. Ensure database was created in shared resource group
-
-### "Backend startup failed"
+### "Backend not responding"
 
 **Solutions:**
-1. Check backend logs:
+
+1. Connect via SSM and check Caddy logs:
    ```bash
-   az webapp log tail --name infusethink-labs --resource-group rg-infusethink-dev
+   aws ssm start-session --target <instance-id>
+   sudo journalctl -u caddy -f
    ```
-2. Verify startup command: `gunicorn -k uvicorn.workers.UvicornWorker main:app`
-3. Ensure `SCM_DO_BUILD_DURING_DEPLOYMENT=true` is set
-4. Check that `requirements.txt` is present in backend code
+2. Verify security group allows ports 80/443
+3. Check `user_data.sh` ran: `cat /var/log/cloud-init-output.log`
 
-### "Pulumi update fails with permission errors"
+### "terraform apply fails with permissions error"
 
 **Solutions:**
-1. Ensure you're authenticated: `az login`
-2. Verify you have Contributor access to the subscription
-3. Check Azure Active Directory permissions
+
+1. Verify identity: `aws sts get-caller-identity`
+2. Ensure IAM user/role has EC2, Route53, IAM permissions
 
 ## 🧹 Cleanup
 
-To destroy everything (⚠️ **irreversible - all data will be lost**):
+To destroy everything (⚠️ **irreversible — all resources will be deleted**):
 
 ```bash
-# Step 1: Destroy environment stacks first (in order)
-pulumi stack select dev
-pulumi destroy
-
-pulumi stack select staging
-pulumi destroy
-
-pulumi stack select prod
-pulumi destroy
-
-# Step 2: Then destroy shared infrastructure
-cd shared-infra
-pulumi destroy
-cd ..
+terraform destroy
 ```
-
-**Important:** You must destroy environment stacks before destroying the shared stack, as they depend on the shared PostgreSQL server.
 
 ## 🔄 Updating Infrastructure
 
-### Updating Shared Infrastructure
-
-Changes to shared infrastructure affect **all environments**:
-
 ```bash
-cd shared-infra
-pulumi preview  # Review changes
-pulumi up       # Apply changes (use caution)
-```
-
-⚠️ **Warning:** Changes to the shared PostgreSQL server (e.g., SKU changes, version upgrades) may cause downtime for all environments.
-
-### Updating a Single Environment
-
-```bash
-pulumi stack select dev
-pulumi preview  # Review changes
-pulumi up       # Apply changes
+terraform plan   # Review changes
+terraform apply  # Apply changes
 ```
 
 ## 📊 Monitoring & Operations
 
-### View Stack Outputs
+### View Outputs
 
 ```bash
-# Shared infrastructure
-cd shared-infra
-pulumi stack output
-
-# Environment stack
-pulumi stack select dev
-pulumi stack output
+terraform output
 ```
+
+### Connect to Instance
+
+```bash
+aws ssm start-session --target $(terraform output -raw instance_id)
+```
+
+### View Caddy Logs
+
+```bash
+# After connecting via SSM:
+sudo journalctl -u caddy -f
+```
+
+<!-- References -->
+
+[ssm-plugin]: https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html
