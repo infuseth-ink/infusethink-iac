@@ -180,7 +180,9 @@ uv run cz commit
 ```
 ├── providers.tf         # AWS provider + version constraints
 ├── variables.tf         # Input variables
-├── terraform.tfvars     # Variable values (non-sensitive, committed)
+├── staging.tfvars       # Staging variable values (non-sensitive, committed)
+├── dev.tfvars           # Dev variable values (non-sensitive, committed)
+├── prod.tfvars          # Prod variable values (non-sensitive, committed)
 ├── data.tf              # Data sources (AMI lookup)
 ├── iam.tf               # IAM role + instance profile for SSM
 ├── security_group.tf    # Ports 80 and 443 only
@@ -192,7 +194,8 @@ uv run cz commit
 
 ## 🔐 Security & Secrets
 
-- No secrets committed — `terraform.tfvars` contains non-sensitive config only
+- No secrets committed — `*.tfvars` files contain non-sensitive config only; applied with
+  `terraform apply -var-file=staging.tfvars`
 - Sensitive values stored in AWS Parameter Store, referenced via `data "aws_ssm_parameter"`
 - Security group allows ports 80 and 443 only — no port 22
 - Instance access via SSM Session Manager (IAM-controlled)
