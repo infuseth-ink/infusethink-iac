@@ -1,16 +1,16 @@
-# Route53 hosted zone and DNS records for infuseth.ink.
+# Route53 hosted zone and DNS records for var.domain_name.
 # Replaces the Pulumi AwsRoute53Zone component and all create_*_record functions.
 # All resources imported from existing AWS infrastructure — no DNS repropagation.
 
 
 resource "aws_route53_zone" "main" {
-  name = "infuseth.ink"
+  name = var.domain_name
 }
 
 # MX — Namecheap Private Email (mail routing unchanged)
 resource "aws_route53_record" "mx" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = "infuseth.ink"
+  name    = var.domain_name
   type    = "MX"
   ttl     = 300
 
@@ -23,7 +23,7 @@ resource "aws_route53_record" "mx" {
 # SPF — authorises Namecheap Private Email to send for infuseth.ink
 resource "aws_route53_record" "spf" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = "infuseth.ink"
+  name    = var.domain_name
   type    = "TXT"
   ttl     = 300
 
@@ -36,7 +36,7 @@ resource "aws_route53_record" "spf" {
 # Split across two strings because each TXT string is capped at 255 bytes (RFC 4408).
 resource "aws_route53_record" "dkim" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = "default._domainkey.infuseth.ink"
+  name    = "default._domainkey.${var.domain_name}"
   type    = "TXT"
   ttl     = 300
 
@@ -49,7 +49,7 @@ resource "aws_route53_record" "dkim" {
 # DMARC — policy record (monitoring only, no enforcement)
 resource "aws_route53_record" "dmarc" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = "_dmarc.infuseth.ink"
+  name    = "_dmarc.${var.domain_name}"
   type    = "TXT"
   ttl     = 300
 
@@ -62,7 +62,7 @@ resource "aws_route53_record" "dmarc" {
 # This will update from the old Pulumi-managed IP to the new TF-managed EC2 IP on first apply.
 resource "aws_route53_record" "backend_a" {
   zone_id = aws_route53_zone.main.zone_id
-  name    = "backstage.infuseth.ink"
+  name    = "${var.backend_subdomain}.${var.domain_name}"
   type    = "A"
   ttl     = 300
 
