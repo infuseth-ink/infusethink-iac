@@ -48,8 +48,8 @@ repos:
 
       # Markdown + TOML + JSON formatting
       - id: dprint
-        name: dprint check
-        entry: uv run dprint check
+        name: dprint fmt
+        entry: uv run dprint fmt
         language: system
         files: \.(md|toml|json)$
         pass_filenames: false
