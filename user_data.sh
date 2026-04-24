@@ -17,7 +17,7 @@ cat > /var/www/index.html << 'HTMLEOF'
   <title>Infusethink Backend</title>
 </head>
 <body>
-  <h1>Hello HTTPS World! 🎉</h1>
+  <h1>Hello HTTPS World x Terraform! 🎉</h1>
   <p>Caddy + Let's Encrypt working on ${domain}</p>
 </body>
 </html>
