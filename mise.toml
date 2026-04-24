@@ -1,2 +1,11 @@
 [tools]
 uv = "latest"
+terraform = "1.14.9"
+tflint = "latest"
+
+[tasks.setup]
+description = "One-time: install dev tools and git hooks"
+run = [
+  "uv sync --group dev",
+  "uv run pre-commit install",
+]
