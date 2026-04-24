@@ -10,10 +10,10 @@ output "public_ip" {
 
 output "zone_id" {
   description = "Route 53 hosted zone ID"
-  value       = null
+  value       = aws_route53_zone.main.zone_id
 }
 
 output "name_servers" {
   description = "Route 53 name servers for the hosted zone"
-  value       = null
+  value       = aws_route53_zone.main.name_servers
 }
