@@ -17,6 +17,10 @@ terraform.rc
 # tfvars may contain sensitive values — keep out of version control
 *.tfvars
 *.tfvars.json
+# ...except per-environment baselines (no secrets, non-sensitive config only)
+!staging.tfvars
+!dev.tfvars
+!prod.tfvars
 
 # dprint cache
 .dprint-cache/

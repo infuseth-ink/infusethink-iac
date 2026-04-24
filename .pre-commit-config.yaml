@@ -41,7 +41,7 @@ repos:
       # HCL linting
       - id: tflint
         name: tflint
-        entry: tflint --recursive
+        entry: tflint --recursive --minimum-failure-severity=error
         language: system
         files: \.tf$
         pass_filenames: false
