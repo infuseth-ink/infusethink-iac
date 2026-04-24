@@ -1,6 +1,10 @@
 resource "aws_security_group" "backend" {
-  name        = "infusethink-backend-sg-e84b121"
+  name_prefix = "infusethink-backend-sg-"
   description = "Security group for Infusethink backend - allows HTTP(S)"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   # HTTP — required for Caddy ACME HTTP-01 challenge
   ingress {
