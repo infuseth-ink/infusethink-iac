@@ -1,13 +1,11 @@
-# Route53 hosted zone and DNS records for var.domain_name.
-# Replaces the Pulumi AwsRoute53Zone component and all create_*_record functions.
-# All resources imported from existing AWS infrastructure — no DNS repropagation.
-
+# Route53 hosted zone and email DNS records for var.domain_name.
+# Shared across all environments — one zone, shared email identity.
 
 resource "aws_route53_zone" "main" {
   name = var.domain_name
 }
 
-# MX — Namecheap Private Email (mail routing unchanged)
+# MX — Namecheap Private Email (mail routing)
 resource "aws_route53_record" "mx" {
   zone_id = aws_route53_zone.main.zone_id
   name    = var.domain_name
@@ -20,7 +18,7 @@ resource "aws_route53_record" "mx" {
   ]
 }
 
-# SPF — authorises Namecheap Private Email to send for infuseth.ink
+# SPF — authorises Namecheap Private Email to send for the domain
 resource "aws_route53_record" "spf" {
   zone_id = aws_route53_zone.main.zone_id
   name    = var.domain_name
@@ -56,15 +54,4 @@ resource "aws_route53_record" "dmarc" {
   records = [
     "v=DMARC1; p=none;",
   ]
-}
-
-# A — backstage.infuseth.ink → staging EC2 instance
-# This will update from the old Pulumi-managed IP to the new TF-managed EC2 IP on first apply.
-resource "aws_route53_record" "backend_a" {
-  zone_id = aws_route53_zone.main.zone_id
-  name    = "${var.backend_subdomain}.${var.domain_name}"
-  type    = "A"
-  ttl     = 300
-
-  records = [aws_instance.backend.public_ip]
 }

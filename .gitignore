@@ -18,9 +18,7 @@ terraform.rc
 *.tfvars
 *.tfvars.json
 # ...except per-environment baselines (no secrets, non-sensitive config only)
-!staging.tfvars
-!dev.tfvars
-!prod.tfvars
+!environments/*/terraform.tfvars
 
 # dprint cache
 .dprint-cache/
