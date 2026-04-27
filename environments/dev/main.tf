@@ -6,6 +6,7 @@ data "aws_route53_zone" "shared" {
 module "backend" {
   source            = "../../modules/backend"
   zone_id           = data.aws_route53_zone.shared.zone_id
+  environment       = "dev"
   domain_name       = var.domain_name
   backend_subdomain = var.backend_subdomain
   instance_type     = var.instance_type

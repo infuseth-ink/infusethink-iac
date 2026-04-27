@@ -3,6 +3,11 @@ variable "zone_id" {
   type        = string
 }
 
+variable "environment" {
+  description = "Environment name (e.g. staging, dev, prod) — used to namespace resource names"
+  type        = string
+}
+
 variable "domain_name" {
   description = "Root domain name"
   type        = string

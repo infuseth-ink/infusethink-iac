@@ -14,7 +14,7 @@ data "aws_ami" "al2023" {
 }
 
 resource "aws_iam_role" "backend" {
-  name = "infusethink-backend"
+  name = "infusethink-backend-${var.environment}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -28,7 +28,7 @@ resource "aws_iam_role" "backend" {
   })
 
   tags = {
-    Name = "infusethink-backend"
+    Name = "infusethink-backend-${var.environment}"
   }
 }
 
@@ -38,13 +38,13 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 }
 
 resource "aws_iam_instance_profile" "backend" {
-  name = "infusethink-backend"
+  name = "infusethink-backend-${var.environment}"
   role = aws_iam_role.backend.name
 }
 
 resource "aws_security_group" "backend" {
-  name_prefix = "infusethink-backend-sg-"
-  description = "Security group for Infusethink backend - allows HTTP(S)"
+  name_prefix = "infusethink-backend-${var.environment}-sg-"
+  description = "Security group for Infusethink backend (${var.environment}) - allows HTTP(S)"
 
   lifecycle {
     create_before_destroy = true
@@ -81,7 +81,7 @@ resource "aws_security_group" "backend" {
   }
 
   tags = {
-    Name = "infusethink-backend"
+    Name = "infusethink-backend-${var.environment}"
   }
 }
 
@@ -102,7 +102,7 @@ resource "aws_instance" "backend" {
   user_data_replace_on_change = true
 
   tags = {
-    Name = "infusethink-backend"
+    Name = "infusethink-backend-${var.environment}"
   }
 }
 
