@@ -104,10 +104,10 @@ graph TB
 
 ### Prerequisites
 
-✅ AWS sign-in via `aws login` (uses IAM root sessions — no static keys on disk)
-✅ [Session Manager plugin][ssm-plugin] installed
-✅ `mise install` (installs uv, Terraform, tflint)
-✅ `mise run setup` (installs pre-commit + commitizen via uv, sets up git hooks)
+- ✅ AWS sign-in via `aws login` (uses IAM root sessions — no static keys on disk)
+- ✅ [Session Manager plugin][ssm-plugin] installed
+- ✅ `mise install` (installs uv, Terraform, tflint)
+- ✅ `mise run setup` (installs pre-commit + commitizen via uv, sets up git hooks)
 
 ### Authenticating to AWS
 
