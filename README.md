@@ -1,17 +1,14 @@
 # Infuseth.ink Infrastructure as Code
 
-> **Note:** This repo is being migrated from Pulumi (Azure) to Terraform (AWS).
-> This README reflects the target state.
-
 Infrastructure as Code for [Infuseth.ink](https://infuseth.ink) using Terraform on AWS.
 Manages the backend (Python FastAPI) on EC2 and DNS via Route53.
 Frontend (Next.js) is hosted separately — Netlify or Amplify Hosting are candidates.
 
 ## 🏗️ Architecture Overview
 
-This infrastructure supports a modular, multi-environment setup.
-Each environment runs the backend on a single EC2 instance with Caddy handling TLS.
-The frontend is deployed separately.
+A modular, multi-environment setup. One Route53 hosted zone is shared across all
+environments (owned by `environments/shared/`); each backend environment runs on a
+single EC2 instance with Caddy handling TLS.
 
 ### Core Architecture
 
@@ -38,8 +35,8 @@ graph TB
         fe_dev -->|API calls| caddy_dev
     end
 
-    subgraph dns["Route53 (infuseth.ink)"]
-        r53["Hosted Zone<br/>+ MX, SPF, DKIM, DMARC"]
+    subgraph dns["Route53 (shared)"]
+        r53["infuseth.ink hosted zone<br/>+ MX, SPF, DKIM, DMARC"]
     end
 
     r53 --> fe_prod & fe_stg & fe_dev
@@ -52,8 +49,15 @@ graph TB
 
 ### Environment Plan
 
-> **Current scope:** Staging only. Dev and prod are planned but not yet deployed —
-> starting with one always-on instance avoids stop/start overhead while the stack is being established.
+> **Current scope:** `shared` (Route53 zone + email DNS) and `staging` (backend) are
+> active. `dev` and `prod` are scaffolded but not yet applied — starting with one
+> always-on instance avoids stop/start overhead while the stack is being established.
+
+#### Shared ✅ active
+
+- **Owns**: Route53 hosted zone for `infuseth.ink` + email DNS records (MX, SPF, DKIM, DMARC)
+- **Consumed by**: all backend environments via `data "aws_route53_zone"` lookup
+- **State lives in**: `environments/shared/`
 
 #### Staging ✅ active
 
@@ -100,49 +104,62 @@ graph TB
 
 ### Prerequisites
 
-✅ AWS CLI authenticated (`aws configure`)
+✅ AWS sign-in via `aws login` (uses IAM root sessions — no static keys on disk)
 ✅ [Session Manager plugin][ssm-plugin] installed
 ✅ `mise install` (installs uv, Terraform, tflint)
 ✅ `mise run setup` (installs pre-commit + commitizen via uv, sets up git hooks)
 
+### Authenticating to AWS
+
+```bash
+aws login
+```
+
+The `mise run tf` task auto-exports temporary credentials into the terraform process
+via `aws configure export-credentials --format env`. If creds expire mid-session,
+run `aws login` again.
+
 ### Step 1: Deploy
 
 ```bash
-terraform init
-terraform plan
-terraform apply
+mise run tf shared apply     # one-time: Route53 zone + email DNS
+mise run tf staging apply    # backend + DNS A record
 ```
 
 ### Step 2: Connect to EC2
 
 ```bash
-aws ssm start-session --target $(terraform output -raw instance_id)
+aws ssm start-session --target $(cd environments/staging && terraform output -raw instance_id)
 ```
 
 ### Step 3: Verify
 
 ```bash
-curl https://$(terraform output -raw backend_url)
+curl https://backstage.infuseth.ink
 ```
 
 ## 🏗️ Technical Details
 
 ### Terraform Outputs
 
-Each workspace exports:
+`environments/shared/`:
+
+- `zone_id` — Route53 hosted zone ID
+- `name_servers` — NS records to set at registrar
+
+Each backend environment (`staging`, `dev`, `prod`):
 
 - `instance_id` — EC2 instance ID (for SSM)
 - `public_ip` — EC2 public IP
-- `zone_id` — Route53 hosted zone ID
-- `name_servers` — NS records to set at registrar
-- `backend_url` — Backend domain
 
 ### Architecture Notes
 
-- One EC2 instance per environment running the backend only
+- One EC2 instance per backend environment, running the backend only
 - Caddy handles TLS automatically via Let's Encrypt
 - No port 22 open — access via SSM Session Manager only
 - Frontend (Next.js) hosted separately; Netlify and Amplify Hosting are candidates
+- IAM role + instance profile names suffixed with environment (e.g.
+  `infusethink-backend-staging`) so envs don't collide in the same AWS account
 
 ## 🛠️ Development
 
@@ -178,27 +195,41 @@ uv run cz commit
 ## 📁 Project Structure
 
 ```
-├── providers.tf         # AWS provider + version constraints
-├── variables.tf         # Input variables
-├── staging.tfvars       # Staging variable values (non-sensitive, committed)
-├── dev.tfvars           # Dev variable values (non-sensitive, committed)
-├── prod.tfvars          # Prod variable values (non-sensitive, committed)
-├── data.tf              # Data sources (AMI lookup)
-├── iam.tf               # IAM role + instance profile for SSM
-├── security_group.tf    # Ports 80 and 443 only
-├── ec2.tf               # EC2 instance
-├── user_data.sh         # Caddy setup script
-├── dns.tf               # Route53 zone + DNS records
-└── outputs.tf           # instance_id, public_ip, zone_id, name_servers
+modules/
+├── shared/              # Route53 zone + email DNS records
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+└── backend/             # EC2, IAM, security group, A record
+    ├── main.tf
+    ├── variables.tf
+    ├── outputs.tf
+    └── user_data.sh     # Caddy + Docker setup script
+
+environments/
+├── shared/              # owns the Route53 zone (one per account)
+├── staging/             # active backend env
+├── dev/                 # scaffolded, not applied
+└── prod/                # scaffolded, not applied
+
+# Each environment dir contains:
+#   main.tf              # module wiring
+#   variables.tf
+#   providers.tf         # AWS provider
+#   versions.tf          # TF + provider version constraints
+#   terraform.tfvars     # non-sensitive values, committed
+#   outputs.tf
 ```
 
 ## 🔐 Security & Secrets
 
-- No secrets committed — `*.tfvars` files contain non-sensitive config only; applied with
-  `terraform apply -var-file=staging.tfvars`
+- No secrets committed — `terraform.tfvars` files contain non-sensitive config only
+  (auto-loaded by terraform from each environment dir)
 - Sensitive values stored in AWS Parameter Store, referenced via `data "aws_ssm_parameter"`
 - Security group allows ports 80 and 443 only — no port 22
 - Instance access via SSM Session Manager (IAM-controlled)
+- AWS auth via `aws login` (temporary creds in `~/.aws/cli/cache/`); no long-lived
+  access keys in `~/.aws/credentials`
 
 ## 💰 Cost
 
@@ -216,9 +247,17 @@ When dev and prod are added, stopped instances accrue only EBS storage charges
 
 ## 🔧 Troubleshooting
 
+### "ExpiredToken" from terraform
+
+**Solution:** Re-run `aws login`, then re-run your `mise run tf ...` command.
+
 ### "No such instance"
 
-**Solution:** Run `terraform apply` first, then use `terraform output -raw instance_id`
+**Solution:** Run `mise run tf staging apply` first, then look up the ID:
+
+```bash
+cd environments/staging && terraform output -raw instance_id
+```
 
 ### "Backend not responding"
 
@@ -237,21 +276,25 @@ When dev and prod are added, stopped instances accrue only EBS storage charges
 **Solutions:**
 
 1. Verify identity: `aws sts get-caller-identity`
-2. Ensure IAM user/role has EC2, Route53, IAM permissions
+2. Ensure the active principal has EC2, Route53, and IAM permissions
 
 ## 🧹 Cleanup
 
-To destroy everything (⚠️ **irreversible — all resources will be deleted**):
+To destroy a single environment (⚠️ **irreversible**):
 
 ```bash
-terraform destroy
+mise run tf staging destroy
 ```
+
+> Don't destroy `shared` unless you really mean it — it owns the Route53 zone and
+> email records. Destroying it will break email and force you to update NS records
+> at the registrar when you re-create.
 
 ## 🔄 Updating Infrastructure
 
 ```bash
-terraform plan   # Review changes
-terraform apply  # Apply changes
+mise run tf staging plan    # review changes
+mise run tf staging apply   # apply
 ```
 
 ## 📊 Monitoring & Operations
@@ -259,13 +302,13 @@ terraform apply  # Apply changes
 ### View Outputs
 
 ```bash
-terraform output
+cd environments/staging && terraform output
 ```
 
 ### Connect to Instance
 
 ```bash
-aws ssm start-session --target $(terraform output -raw instance_id)
+aws ssm start-session --target $(cd environments/staging && terraform output -raw instance_id)
 ```
 
 ### View Caddy Logs
