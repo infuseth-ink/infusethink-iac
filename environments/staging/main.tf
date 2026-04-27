@@ -1,11 +1,11 @@
-module "shared" {
-  source      = "../../modules/shared"
-  domain_name = var.domain_name
+data "aws_route53_zone" "shared" {
+  name         = var.domain_name
+  private_zone = false
 }
 
 module "backend" {
   source            = "../../modules/backend"
-  zone_id           = module.shared.zone_id
+  zone_id           = data.aws_route53_zone.shared.zone_id
   domain_name       = var.domain_name
   backend_subdomain = var.backend_subdomain
   instance_type     = var.instance_type
