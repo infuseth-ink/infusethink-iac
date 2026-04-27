@@ -9,3 +9,15 @@ run = [
   "uv sync --group dev",
   "uv run pre-commit install",
 ]
+
+[tasks.tf]
+description = "Run terraform in an environment with AWS creds exported. Usage: mise run tf <env> <terraform args>"
+usage = '''
+arg "env" help="Environment name: staging, dev, or prod"
+arg "args" var=#true help="Arguments passed to terraform"
+'''
+run = '''
+eval "$(aws configure export-credentials --format env)"
+cd "environments/$usage_env"
+terraform $usage_args
+'''
