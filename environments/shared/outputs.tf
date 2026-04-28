@@ -35,11 +35,11 @@ output "db_master_secret_arn" {
 }
 
 output "staging_database_url" {
-  description = "Postgres connection URL for the staging logical DB (URL-encoded password)"
+  description = "Postgres connection URL for the staging logical DB (least-privilege role, URL-encoded password)"
   value = format(
     "postgres://%s:%s@%s:%d/%s?sslmode=require",
-    module.shared.db_master_username,
-    urlencode(module.shared.db_master_password),
+    postgresql_role.infusethink_staging.name,
+    urlencode(random_password.infusethink_staging.result),
     module.shared.db_address,
     module.shared.db_port,
     postgresql_database.infusethink_staging.name,
