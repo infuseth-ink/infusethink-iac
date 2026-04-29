@@ -6,26 +6,12 @@ dnf install -y docker
 systemctl enable docker
 systemctl start docker
 
-# Create hello world placeholder (served by python3 until FastAPI is deployed)
-mkdir -p /var/www
-cat > /var/www/index.html << 'HTMLEOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Infusethink Backend</title>
-</head>
-<body>
-  <h1>Hello HTTPS World x Terraform! 🎉</h1>
-  <p>Caddy + Let's Encrypt working on ${domain}</p>
-</body>
-</html>
-HTMLEOF
-
-# Start simple HTTP server on backend port (placeholder until FastAPI)
-cd /var/www
-nohup python3 -m http.server ${backend_port} &
+# Minimal placeholder — proves Docker → Caddy → HTTPS chain before real image exists
+docker run -d \
+  --name backend \
+  --restart unless-stopped \
+  -p 127.0.0.1:${backend_port}:80 \
+  traefik/whoami
 
 # Write Caddyfile
 mkdir -p /etc/caddy
@@ -35,7 +21,7 @@ ${domain} {
 }
 CADDYEOF
 
-# Run Caddy in Docker (host network so it can reach the local python server)
+# Run Caddy in Docker (host network so it can reach the backend container)
 docker run -d \
   --name caddy \
   --restart unless-stopped \
