@@ -1,6 +1,7 @@
 module "shared" {
-  source      = "../../modules/shared"
-  domain_name = var.domain_name
+  source           = "../../modules/shared"
+  domain_name      = var.domain_name
+  db_allowed_cidrs = var.db_allowed_cidrs
 }
 
 # Logical databases inside the shared Postgres instance — one per environment.

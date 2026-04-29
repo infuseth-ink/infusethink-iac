@@ -9,3 +9,8 @@ variable "domain_name" {
   type        = string
   default     = "infuseth.ink"
 }
+
+variable "db_allowed_cidrs" {
+  description = "CIDR blocks allowed to reach the shared Postgres on 5432"
+  type        = list(string)
+}

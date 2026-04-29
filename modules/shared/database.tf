@@ -29,12 +29,11 @@ resource "aws_security_group" "database" {
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    description      = "Postgres"
-    from_port        = 5432
-    to_port          = 5432
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
+    description = "Postgres - allowlisted CIDRs"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = var.db_allowed_cidrs
   }
 
   egress {
