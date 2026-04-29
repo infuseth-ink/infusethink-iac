@@ -23,14 +23,8 @@ output "db_master_username" {
   value       = module.shared.db_master_username
 }
 
-output "db_master_password" {
-  description = "Shared Postgres master password (managed by RDS in Secrets Manager)"
-  value       = module.shared.db_master_password
-  sensitive   = true
-}
-
 output "db_master_secret_arn" {
-  description = "ARN of the Secrets Manager secret holding the master credentials"
+  description = "ARN of the Secrets Manager secret holding the master credentials. Fetch with `aws secretsmanager get-secret-value --secret-id <arn>`."
   value       = module.shared.db_master_secret_arn
 }
 
