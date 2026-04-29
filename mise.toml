@@ -16,8 +16,4 @@ usage = '''
 arg "env" help="Environment name: staging, dev, or prod"
 arg "args" var=#true help="Arguments passed to terraform"
 '''
-run = '''
-eval "$(aws configure export-credentials --format env)"
-cd "environments/$usage_env"
-terraform $usage_args
-'''
+file = "scripts/tf.sh"

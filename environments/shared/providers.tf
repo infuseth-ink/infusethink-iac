@@ -3,8 +3,8 @@ provider "aws" {
 }
 
 # Connects to the shared RDS instance to create per-env logical databases.
-# Requires that `terraform apply` is run from a host that can reach the RDS
-# endpoint on 5432 (the SG is open to 0.0.0.0/0, so any laptop works).
+# Requires that `terraform apply` is run from a host whose IP is in
+# `var.db_allowed_cidrs` (see terraform.tfvars).
 provider "postgresql" {
   host            = module.shared.db_address
   port            = module.shared.db_port

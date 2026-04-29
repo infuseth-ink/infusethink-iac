@@ -122,7 +122,7 @@ run `aws login` again.
 ### Step 1: Deploy
 
 ```bash
-mise run tf shared apply     # one-time: Route53 zone + email DNS
+mise run tf shared apply     # one-time: Route53 zone + email DNS + shared RDS
 mise run tf staging apply    # backend + DNS A record
 ```
 
@@ -137,6 +137,28 @@ aws ssm start-session --target $(cd environments/staging && terraform output -ra
 ```bash
 curl https://backstage.infuseth.ink
 ```
+
+### Remote state (pg backend)
+
+All four envs store state in the shared RDS Postgres instance, one schema per
+env, in the `terraform_backend` database. Locking uses Postgres advisory locks
+(no DynamoDB needed). The connection string lives in Secrets Manager
+(`infusethink/terraform-state-conn-str`); the `mise run tf` task fetches it
+into `PG_CONN_STR` automatically.
+
+#### Bootstrap / disaster recovery
+
+On a from-scratch rebuild the DB doesn't exist yet, so the `pg` backend can't
+connect. One-time dance:
+
+1. Comment out the `backend "pg"` block in `environments/shared/backend.tf`.
+2. `mise run tf shared init && mise run tf shared apply` — recreates RDS,
+   the `terraform_backend` DB, and the Secrets Manager entry.
+3. Uncomment the backend block, then `mise run tf shared init -migrate-state`
+   to push shared's local state into pg.
+4. For each other env: `mise run tf <env> init -migrate-state` (or just
+   `init` if the local state file is gone — terraform will start fresh and
+   you'll need to `import` existing resources).
 
 ## 🏗️ Technical Details
 
