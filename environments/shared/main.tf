@@ -77,6 +77,7 @@ resource "aws_iam_openid_connect_provider" "github" {
   client_id_list = ["sts.amazonaws.com"]
 
   # Thumbprint for token.actions.githubusercontent.com (stable, rotated by GitHub)
+  # Comes from: https://aws.amazon.com/blogs/security/use-iam-roles-to-connect-github-actions-to-actions-in-aws/
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
