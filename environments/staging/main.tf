@@ -11,5 +11,4 @@ module "backend" {
   backend_subdomain = var.backend_subdomain
   instance_type     = var.instance_type
   backend_port      = var.backend_port
-  key_name          = var.key_name
 }

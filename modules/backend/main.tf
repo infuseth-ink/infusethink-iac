@@ -88,19 +88,6 @@ resource "aws_security_group" "backend" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
-  # SSH - GitHub Actions deploy (only when a key pair is provided)
-  dynamic "ingress" {
-    for_each = var.key_name != "" ? [1] : []
-    content {
-      description      = "SSH - GitHub Actions deploy"
-      from_port        = 22
-      to_port          = 22
-      protocol         = "tcp"
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
-
   # Egress — required for Caddy to reach Let's Encrypt and pull Docker images
   egress {
     description      = "Allow all outbound"
@@ -122,8 +109,6 @@ resource "aws_instance" "backend" {
 
   iam_instance_profile   = aws_iam_instance_profile.backend.name
   vpc_security_group_ids = [aws_security_group.backend.id]
-
-  key_name = var.key_name != "" ? var.key_name : null
 
   user_data = templatefile("${path.module}/user_data.sh", {
     domain       = "${var.backend_subdomain}.${var.domain_name}"

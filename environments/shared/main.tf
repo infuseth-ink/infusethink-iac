@@ -81,8 +81,8 @@ resource "aws_iam_openid_connect_provider" "github" {
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
 }
 
-resource "aws_iam_role" "gha_ecr_push" {
-  name = "infusethink-gha-ecr-push"
+resource "aws_iam_role" "gha_deploy" {
+  name = "infusethink-gha-deploy"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -106,11 +106,47 @@ resource "aws_iam_role" "gha_ecr_push" {
   })
 
   tags = {
-    Name = "infusethink-gha-ecr-push"
+    Name = "infusethink-gha-deploy"
   }
 }
 
-resource "aws_iam_role_policy_attachment" "gha_ecr_push" {
-  role       = aws_iam_role.gha_ecr_push.name
+resource "aws_iam_role_policy_attachment" "gha_deploy_ecr" {
+  role       = aws_iam_role.gha_deploy.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+}
+
+resource "aws_iam_role_policy" "gha_ssm_deploy" {
+  name = "infusethink-gha-ssm-deploy"
+  role = aws_iam_role.gha_deploy.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "SendCommandDocument"
+        Effect   = "Allow"
+        Action   = "ssm:SendCommand"
+        Resource = "arn:aws:ssm:*:*:document/AWS-RunShellScript"
+      },
+      {
+        Sid    = "SendCommandInstances"
+        Effect = "Allow"
+        Action = "ssm:SendCommand"
+        Resource = [
+          "arn:aws:ec2:*:*:instance/*",
+        ]
+        Condition = {
+          StringLike = {
+            "ec2:ResourceTag/Name" = "infusethink-backend-*"
+          }
+        }
+      },
+      {
+        Sid      = "GetCommandInvocation"
+        Effect   = "Allow"
+        Action   = "ssm:GetCommandInvocation"
+        Resource = "*"
+      },
+    ]
+  })
 }
