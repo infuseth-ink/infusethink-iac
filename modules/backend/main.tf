@@ -37,6 +37,24 @@ resource "aws_iam_role_policy_attachment" "ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
+resource "aws_iam_role_policy_attachment" "ecr_pull" {
+  role       = aws_iam_role.backend.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_ecr_repository" "backend" {
+  name                 = "infusethink-backend-${var.environment}"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name = "infusethink-backend-${var.environment}"
+  }
+}
+
 resource "aws_iam_instance_profile" "backend" {
   name = "infusethink-backend-${var.environment}"
   role = aws_iam_role.backend.name
@@ -70,6 +88,19 @@ resource "aws_security_group" "backend" {
     ipv6_cidr_blocks = ["::/0"]
   }
 
+  # SSH - GitHub Actions deploy (only when a key pair is provided)
+  dynamic "ingress" {
+    for_each = var.key_name != "" ? [1] : []
+    content {
+      description      = "SSH - GitHub Actions deploy"
+      from_port        = 22
+      to_port          = 22
+      protocol         = "tcp"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
+  }
+
   # Egress — required for Caddy to reach Let's Encrypt and pull Docker images
   egress {
     description      = "Allow all outbound"
@@ -92,7 +123,8 @@ resource "aws_instance" "backend" {
   iam_instance_profile   = aws_iam_instance_profile.backend.name
   vpc_security_group_ids = [aws_security_group.backend.id]
 
-  # No key_name — access via SSM Session Manager only
+  key_name = var.key_name != "" ? var.key_name : null
+
   user_data = templatefile("${path.module}/user_data.sh", {
     domain       = "${var.backend_subdomain}.${var.domain_name}"
     backend_port = var.backend_port
