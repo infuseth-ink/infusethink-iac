@@ -110,7 +110,7 @@ resource "aws_iam_role" "gha_deploy" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "gha_ecr_push" {
+resource "aws_iam_role_policy_attachment" "gha_deploy_ecr" {
   role       = aws_iam_role.gha_deploy.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
 }
