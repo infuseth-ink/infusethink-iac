@@ -24,3 +24,44 @@ resource "postgresql_role" "infusethink_staging" {
   login    = true
   password = random_password.infusethink_staging.result
 }
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Terraform remote state backend (pg backend) — one DB, one schema per env.
+# The connection string is published to Secrets Manager so the `mise run tf`
+# task can fetch it (chicken/egg: we can't read it from `terraform output`
+# because doing so would already need backend access).
+# ──────────────────────────────────────────────────────────────────────────────
+
+resource "postgresql_database" "terraform_backend" {
+  name  = "terraform_backend"
+  owner = postgresql_role.terraform_backend.name
+}
+
+resource "random_password" "terraform_backend" {
+  length  = 32
+  special = false
+}
+
+resource "postgresql_role" "terraform_backend" {
+  name     = "terraform_backend"
+  login    = true
+  password = random_password.terraform_backend.result
+}
+
+resource "aws_secretsmanager_secret" "tfstate_conn_str" {
+  name                    = "infusethink/terraform-state-conn-str"
+  description             = "Postgres connection string used by the terraform pg backend"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "tfstate_conn_str" {
+  secret_id = aws_secretsmanager_secret.tfstate_conn_str.id
+  secret_string = format(
+    "postgres://%s:%s@%s:%d/%s?sslmode=require",
+    postgresql_role.terraform_backend.name,
+    urlencode(random_password.terraform_backend.result),
+    module.shared.db_address,
+    module.shared.db_port,
+    postgresql_database.terraform_backend.name,
+  )
+}

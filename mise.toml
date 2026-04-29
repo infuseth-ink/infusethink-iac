@@ -18,6 +18,13 @@ arg "args" var=#true help="Arguments passed to terraform"
 '''
 run = '''
 eval "$(aws configure export-credentials --format env)"
+# Fetch the pg backend connection string from Secrets Manager. On a fresh
+# bootstrap (before the secret exists) this is empty; comment out the
+# backend block in environments/shared/backend.tf and apply locally first.
+# See README → "Bootstrap / disaster recovery".
+export PG_CONN_STR="$(aws secretsmanager get-secret-value \
+  --secret-id infusethink/terraform-state-conn-str \
+  --query SecretString --output text 2>/dev/null || true)"
 cd "environments/$usage_env"
 terraform $usage_args
 '''
