@@ -91,7 +91,11 @@ resource "aws_iam_role" "gha_ecr_push" {
       Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringLike = {
-          "token.actions.githubusercontent.com:sub" = "repo:infuseth-ink/infusethink-backend:*"
+          "token.actions.githubusercontent.com:sub" = [
+            "repo:infuseth-ink/infusethink-backend:ref:refs/heads/main",
+            "repo:infuseth-ink/infusethink-backend:ref:refs/heads/dev",
+            "repo:infuseth-ink/infusethink-backend:ref:refs/heads/staging",
+          ]
         }
         StringEquals = {
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
