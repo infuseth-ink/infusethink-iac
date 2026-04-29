@@ -74,9 +74,11 @@ resource "aws_db_instance" "shared" {
   monitoring_interval          = 0
   performance_insights_enabled = false
   storage_encrypted            = false
-  deletion_protection          = false
-  skip_final_snapshot          = true
-  apply_immediately            = true
+  # Guardrail against accidental destroy/replace. Toggle off + apply before
+  # an intentional teardown.
+  deletion_protection = true
+  skip_final_snapshot = true
+  apply_immediately   = true
 
   tags = {
     Name = "infusethink-shared"
