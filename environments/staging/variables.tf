@@ -26,9 +26,3 @@ variable "backend_port" {
   type        = number
   default     = 8000
 }
-
-variable "key_name" {
-  description = "EC2 key pair name for SSH access (GitHub Actions deploy). Leave empty to disable SSH."
-  type        = string
-  default     = ""
-}
