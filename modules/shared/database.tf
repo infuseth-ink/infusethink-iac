@@ -22,7 +22,9 @@ resource "aws_db_subnet_group" "shared" {
 }
 
 # Publicly accessible so terraform (and devs) can manage logical DBs/roles from laptops.
-# Password-protected; rotate via `terraform apply -replace=module.shared.random_password.db_master`.
+# Master password is RDS-managed (`manage_master_user_password = true`) and stored in
+# Secrets Manager — rotate via the AWS console/API or `aws secretsmanager rotate-secret`,
+# not via Terraform.
 resource "aws_security_group" "database" {
   name        = "infusethink-shared-db"
   description = "Shared Postgres - allow 5432 from anywhere (password-protected)"
