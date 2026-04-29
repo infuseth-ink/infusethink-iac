@@ -123,16 +123,21 @@ resource "aws_iam_role_policy" "gha_ssm_deploy" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "SendCommand"
+        Sid      = "SendCommandDocument"
+        Effect   = "Allow"
+        Action   = "ssm:SendCommand"
+        Resource = "arn:aws:ssm:*:*:document/AWS-RunShellScript"
+      },
+      {
+        Sid    = "SendCommandInstances"
         Effect = "Allow"
         Action = "ssm:SendCommand"
         Resource = [
-          "arn:aws:ssm:*:*:document/AWS-RunShellScript",
           "arn:aws:ec2:*:*:instance/*",
         ]
         Condition = {
           StringLike = {
-            "ssm:resourceTag/Name" = "infusethink-backend-*"
+            "ec2:ResourceTag/Name" = "infusethink-backend-*"
           }
         }
       },
