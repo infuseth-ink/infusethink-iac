@@ -65,3 +65,47 @@ resource "aws_secretsmanager_secret_version" "tfstate_conn_str" {
     postgresql_database.terraform_backend.name,
   )
 }
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GitHub Actions OIDC — allows the backend app repo to push images to ECR
+# without long-lived AWS credentials.
+# ──────────────────────────────────────────────────────────────────────────────
+
+resource "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
+
+  client_id_list = ["sts.amazonaws.com"]
+
+  # Thumbprint for token.actions.githubusercontent.com (stable, rotated by GitHub)
+  thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
+}
+
+resource "aws_iam_role" "gha_ecr_push" {
+  name = "infusethink-gha-ecr-push"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:infuseth-ink/infusethink-backend:*"
+        }
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+
+  tags = {
+    Name = "infusethink-gha-ecr-push"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "gha_ecr_push" {
+  role       = aws_iam_role.gha_ecr_push.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+}

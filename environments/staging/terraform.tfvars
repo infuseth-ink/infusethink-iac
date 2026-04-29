@@ -3,3 +3,4 @@ domain_name       = "infuseth.ink"
 backend_subdomain = "backstage"
 instance_type     = "t3.micro"
 backend_port      = 8000
+key_name          = "infusethink-backend-staging"
