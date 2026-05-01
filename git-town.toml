@@ -6,7 +6,7 @@ order = "asc"
 unknown-type = "feature"
 
 [create]
-branch-prefix = "hub-"
+branch-prefix = "GH-"
 new-branch-type = "feature"
 share-new-branches = "no"
 stash = false
