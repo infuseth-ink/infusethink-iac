@@ -42,6 +42,20 @@ resource "aws_iam_role_policy_attachment" "ecr_pull" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+resource "aws_iam_role_policy" "secrets" {
+  name = "infusethink-backend-${var.environment}-secrets"
+  role = aws_iam_role.backend.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+      Resource = "arn:aws:secretsmanager:${var.aws_region}:${var.aws_account_id}:secret:infusethink/${var.environment}/*"
+    }]
+  })
+}
+
 resource "aws_ecr_repository" "backend" {
   name                 = "infusethink-backend-${var.environment}"
   image_tag_mutability = "MUTABLE"
