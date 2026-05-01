@@ -33,15 +33,7 @@ output "gha_deploy_role_arn" {
   value       = aws_iam_role.gha_deploy.arn
 }
 
-output "staging_database_url" {
-  description = "Postgres connection URL for the staging logical DB (least-privilege role, URL-encoded password)"
-  value = format(
-    "postgres://%s:%s@%s:%d/%s?sslmode=require",
-    postgresql_role.infusethink_staging.name,
-    urlencode(random_password.infusethink_staging.result),
-    module.db.db_address,
-    module.db.db_port,
-    postgresql_database.infusethink_staging.name,
-  )
-  sensitive = true
+output "staging_database_url_secret_arn" {
+  description = "ARN of the Secrets Manager secret holding the staging DATABASE_URL. Fetch with `aws secretsmanager get-secret-value --secret-id <arn>`."
+  value       = aws_secretsmanager_secret.database_url_staging.arn
 }
