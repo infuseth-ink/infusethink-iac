@@ -3,8 +3,9 @@ module "dns" {
   domain_name = var.domain_name
 }
 
-# Look up the current EC2 backend SGs by their stable Name tag, scoped to the
-# default VPC to avoid matching SGs from other VPCs or accounts.
+# Look up the current EC2 backend SGs by their stable Name tag. Using a data
+# source means this picks up a new SG ID if the SG is replaced (e.g. via
+# create_before_destroy with name_prefix on config changes).
 data "aws_vpc" "default" {
   default = true
 }
