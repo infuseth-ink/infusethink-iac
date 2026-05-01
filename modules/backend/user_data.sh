@@ -6,6 +6,11 @@ dnf install -y docker
 systemctl enable docker
 systemctl start docker
 
+# Install, enable, and start SSM agent (not pre-installed on AL2023)
+dnf install -y amazon-ssm-agent
+systemctl enable amazon-ssm-agent
+systemctl start amazon-ssm-agent
+
 # Write Caddyfile
 mkdir -p /etc/caddy
 cat > /etc/caddy/Caddyfile << 'CADDYEOF'
