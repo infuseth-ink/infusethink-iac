@@ -137,6 +137,23 @@ resource "aws_iam_role_policy_attachment" "gha_deploy_ecr" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
 }
 
+resource "aws_iam_role_policy" "gha_deploy_database_url_staging" {
+  name = "infusethink-gha-deploy-database-url-staging"
+  role = aws_iam_role.gha_deploy.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "GetStagingDatabaseUrl"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+        Resource = aws_secretsmanager_secret.database_url_staging.arn
+      },
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "gha_ssm_deploy" {
   name = "infusethink-gha-ssm-deploy"
   role = aws_iam_role.gha_deploy.name
