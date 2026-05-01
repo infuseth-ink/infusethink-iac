@@ -117,7 +117,8 @@ resource "aws_iam_role" "gha_deploy" {
           "token.actions.githubusercontent.com:sub" = [
             "repo:infuseth-ink/infusethink-backend:ref:refs/heads/main",
             "repo:infuseth-ink/infusethink-backend:ref:refs/heads/dev",
-            "repo:infuseth-ink/infusethink-backend:ref:refs/heads/staging",
+            "repo:infuseth-ink/infusethink-backend:environment:staging",
+            "repo:infuseth-ink/infusethink-backend:environment:production",
           ]
         }
         StringEquals = {
