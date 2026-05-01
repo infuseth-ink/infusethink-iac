@@ -3,13 +3,21 @@ module "dns" {
   domain_name = var.domain_name
 }
 
-# Look up the current EC2 backend SGs by their stable Name tag.
-# Using a data source (rather than a tfvars value) means this automatically
-# picks up the new SG ID whenever user_data_replace_on_change rotates it.
+# Look up the current EC2 backend SGs by their stable Name tag, scoped to the
+# default VPC to avoid matching SGs from other VPCs or accounts.
+data "aws_vpc" "default" {
+  default = true
+}
+
 data "aws_security_groups" "backend_staging" {
   filter {
     name   = "tag:Name"
     values = ["infusethink-backend-staging"]
+  }
+
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
   }
 }
 
