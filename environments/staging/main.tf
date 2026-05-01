@@ -3,8 +3,6 @@ data "aws_route53_zone" "shared" {
   private_zone = false
 }
 
-data "aws_caller_identity" "current" {}
-
 module "backend" {
   source            = "../../modules/backend"
   zone_id           = data.aws_route53_zone.shared.zone_id
@@ -13,6 +11,4 @@ module "backend" {
   backend_subdomain = var.backend_subdomain
   instance_type     = var.instance_type
   backend_port      = var.backend_port
-  aws_region        = var.aws_region
-  aws_account_id    = data.aws_caller_identity.current.account_id
 }
