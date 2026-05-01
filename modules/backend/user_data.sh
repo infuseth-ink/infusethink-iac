@@ -6,13 +6,6 @@ dnf install -y docker
 systemctl enable docker
 systemctl start docker
 
-# Minimal placeholder — proves Docker → Caddy → HTTPS chain before real image exists
-docker run -d \
-  --name backend \
-  --restart unless-stopped \
-  -p 127.0.0.1:${backend_port}:80 \
-  traefik/whoami
-
 # Write Caddyfile
 mkdir -p /etc/caddy
 cat > /etc/caddy/Caddyfile << 'CADDYEOF'
