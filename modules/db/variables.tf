@@ -4,7 +4,7 @@ variable "db_allowed_cidrs" {
 }
 
 variable "db_allowed_security_group_ids" {
-  description = "Security group IDs allowed to reach the shared Postgres on 5432 (e.g. EC2 backend SGs)."
+  description = "Security group IDs allowed to reach the shared Postgres on 5432. Must be in the same VPC as the DB SG (used as source_security_group_id in ingress rules)."
   type        = list(string)
   default     = []
 }
