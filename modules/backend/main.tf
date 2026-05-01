@@ -132,6 +132,11 @@ resource "aws_instance" "backend" {
   # Replace instance when user_data changes (new deploy = new instance)
   user_data_replace_on_change = true
 
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
   tags = {
     Name = "infusethink-backend-${var.environment}"
   }

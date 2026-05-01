@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+# Expand root partition and filesystem to fill the EBS volume
+# AL2023 cloud-init may already handle this; || true prevents set -e from aborting if NOCHANGE
+growpart /dev/nvme0n1 1 || true
+xfs_growfs / || true
+
 # Install Docker
 dnf install -y docker
 systemctl enable docker
