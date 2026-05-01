@@ -38,7 +38,7 @@ resource "aws_secretsmanager_secret" "database_url_staging" {
 resource "aws_secretsmanager_secret_version" "database_url_staging" {
   secret_id = aws_secretsmanager_secret.database_url_staging.id
   secret_string = format(
-    "postgres://%s:%s@%s:%d/%s?sslmode=require",
+    "postgresql://%s:%s@%s:%d/%s?sslmode=require",
     postgresql_role.infusethink_staging.name,
     urlencode(random_password.infusethink_staging.result),
     module.db.db_address,
@@ -117,7 +117,8 @@ resource "aws_iam_role" "gha_deploy" {
           "token.actions.githubusercontent.com:sub" = [
             "repo:infuseth-ink/infusethink-backend:ref:refs/heads/main",
             "repo:infuseth-ink/infusethink-backend:ref:refs/heads/dev",
-            "repo:infuseth-ink/infusethink-backend:ref:refs/heads/staging",
+            "repo:infuseth-ink/infusethink-backend:environment:staging",
+            "repo:infuseth-ink/infusethink-backend:environment:production",
           ]
         }
         StringEquals = {
@@ -176,7 +177,7 @@ resource "aws_iam_role_policy" "gha_ssm_deploy" {
         ]
         Condition = {
           StringLike = {
-            "ec2:ResourceTag/Name" = "infusethink-backend-*"
+            "ssm:resourceTag/Name" = "infusethink-backend-*"
           }
         }
       },

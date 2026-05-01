@@ -1,3 +1,6 @@
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
 data "aws_ami" "al2023" {
   most_recent = true
   owners      = ["amazon"]
@@ -40,6 +43,20 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 resource "aws_iam_role_policy_attachment" "ecr_pull" {
   role       = aws_iam_role.backend.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+resource "aws_iam_role_policy" "secrets" {
+  name = "infusethink-backend-${var.environment}-secrets"
+  role = aws_iam_role.backend.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+      Resource = "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:infusethink/${var.environment}/*"
+    }]
+  })
 }
 
 resource "aws_ecr_repository" "backend" {
@@ -117,6 +134,11 @@ resource "aws_instance" "backend" {
 
   # Replace instance when user_data changes (new deploy = new instance)
   user_data_replace_on_change = true
+
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
 
   tags = {
     Name = "infusethink-backend-${var.environment}"
