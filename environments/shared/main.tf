@@ -147,6 +147,12 @@ resource "aws_iam_role_policy" "gha_ssm_deploy" {
         Action   = "ssm:GetCommandInvocation"
         Resource = "*"
       },
+      {
+        Sid      = "DescribeInstances"
+        Effect   = "Allow"
+        Action   = "ec2:DescribeInstances"
+        Resource = "*"
+      },
     ]
   })
 }

@@ -28,6 +28,11 @@ output "db_master_secret_arn" {
   value       = module.shared.db_master_secret_arn
 }
 
+output "gha_deploy_role_arn" {
+  description = "ARN of the GitHub Actions IAM role — use as `role-to-assume` in aws-actions/configure-aws-credentials"
+  value       = aws_iam_role.gha_deploy.arn
+}
+
 output "staging_database_url" {
   description = "Postgres connection URL for the staging logical DB (least-privilege role, URL-encoded password)"
   value = format(
