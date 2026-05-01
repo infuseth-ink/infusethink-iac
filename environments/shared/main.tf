@@ -3,9 +3,20 @@ module "dns" {
   domain_name = var.domain_name
 }
 
+# Look up the current EC2 backend SGs by their stable Name tag.
+# Using a data source (rather than a tfvars value) means this automatically
+# picks up the new SG ID whenever user_data_replace_on_change rotates it.
+data "aws_security_groups" "backend_staging" {
+  filter {
+    name   = "tag:Name"
+    values = ["infusethink-backend-staging"]
+  }
+}
+
 module "db" {
-  source           = "../../modules/db"
-  db_allowed_cidrs = var.db_allowed_cidrs
+  source                        = "../../modules/db"
+  db_allowed_cidrs              = var.db_allowed_cidrs
+  db_allowed_security_group_ids = data.aws_security_groups.backend_staging.ids
 }
 
 # Logical databases inside the shared Postgres instance — one per environment.

@@ -52,6 +52,21 @@ resource "aws_security_group" "database" {
   }
 }
 
+# One ingress rule per EC2 security group — allows backend instances to reach Postgres.
+# Kept as separate aws_security_group_rule resources (not inline) so the set can be
+# managed dynamically without recreating the security group.
+resource "aws_security_group_rule" "db_from_backend_sg" {
+  for_each = toset(var.db_allowed_security_group_ids)
+
+  security_group_id        = aws_security_group.database.id
+  type                     = "ingress"
+  description              = "Postgres from backend EC2 SG"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = each.value
+}
+
 resource "aws_db_instance" "shared" {
   identifier     = "infusethink-shared"
   engine         = "postgres"
