@@ -1,6 +1,10 @@
-module "shared" {
-  source           = "../../modules/shared"
-  domain_name      = var.domain_name
+module "dns" {
+  source      = "../../modules/dns"
+  domain_name = var.domain_name
+}
+
+module "db" {
+  source           = "../../modules/db"
   db_allowed_cidrs = var.db_allowed_cidrs
 }
 
@@ -60,8 +64,8 @@ resource "aws_secretsmanager_secret_version" "tfstate_conn_str" {
     "postgres://%s:%s@%s:%d/%s?sslmode=require",
     postgresql_role.terraform_backend.name,
     urlencode(random_password.terraform_backend.result),
-    module.shared.db_address,
-    module.shared.db_port,
+    module.db.db_address,
+    module.db.db_port,
     postgresql_database.terraform_backend.name,
   )
 }
