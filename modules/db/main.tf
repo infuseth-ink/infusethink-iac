@@ -30,26 +30,46 @@ resource "aws_security_group" "database" {
   description = "Shared Postgres - allow 5432 from anywhere (password-protected)"
   vpc_id      = data.aws_vpc.default.id
 
-  ingress {
-    description = "Postgres - allowlisted CIDRs"
-    from_port   = 5432
-    to_port     = 5432
-    protocol    = "tcp"
-    cidr_blocks = var.db_allowed_cidrs
-  }
-
-  egress {
-    description      = "Allow all outbound"
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
+  # No inline ingress/egress blocks — all rules managed via aws_security_group_rule
+  # to avoid perpetual diffs when mixing inline and standalone rules.
 
   tags = {
     Name = "infusethink-shared-db"
   }
+}
+
+resource "aws_security_group_rule" "db_ingress_cidrs" {
+  security_group_id = aws_security_group.database.id
+  type              = "ingress"
+  description       = "Postgres - allowlisted CIDRs"
+  from_port         = 5432
+  to_port           = 5432
+  protocol          = "tcp"
+  cidr_blocks       = var.db_allowed_cidrs
+}
+
+resource "aws_security_group_rule" "db_egress_all" {
+  security_group_id = aws_security_group.database.id
+  type              = "egress"
+  description       = "Allow all outbound"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks  = ["::/0"]
+}
+
+# One ingress rule per EC2 security group — allows backend instances to reach Postgres.
+resource "aws_security_group_rule" "db_from_backend_sg" {
+  for_each = toset(var.db_allowed_security_group_ids)
+
+  security_group_id        = aws_security_group.database.id
+  type                     = "ingress"
+  description              = "Postgres from backend EC2 SG"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = each.value
 }
 
 resource "aws_db_instance" "shared" {

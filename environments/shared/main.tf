@@ -3,9 +3,29 @@ module "dns" {
   domain_name = var.domain_name
 }
 
+# Look up the current EC2 backend SGs by their stable Name tag. Using a data
+# source means this picks up a new SG ID if the SG is replaced (e.g. via
+# create_before_destroy with name_prefix on config changes).
+data "aws_vpc" "default" {
+  default = true
+}
+
+data "aws_security_groups" "backend_staging" {
+  filter {
+    name   = "tag:Name"
+    values = ["infusethink-backend-staging"]
+  }
+
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
 module "db" {
-  source           = "../../modules/db"
-  db_allowed_cidrs = var.db_allowed_cidrs
+  source                        = "../../modules/db"
+  db_allowed_cidrs              = var.db_allowed_cidrs
+  db_allowed_security_group_ids = data.aws_security_groups.backend_staging.ids
 }
 
 # Logical databases inside the shared Postgres instance — one per environment.
