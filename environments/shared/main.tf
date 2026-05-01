@@ -29,6 +29,24 @@ resource "postgresql_role" "infusethink_staging" {
   password = random_password.infusethink_staging.result
 }
 
+resource "aws_secretsmanager_secret" "database_url_staging" {
+  name                    = "infusethink/staging/database-url"
+  description             = "DATABASE_URL for the staging app (least-privilege role, URL-encoded password)"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "database_url_staging" {
+  secret_id = aws_secretsmanager_secret.database_url_staging.id
+  secret_string = format(
+    "postgres://%s:%s@%s:%d/%s?sslmode=require",
+    postgresql_role.infusethink_staging.name,
+    urlencode(random_password.infusethink_staging.result),
+    module.db.db_address,
+    module.db.db_port,
+    postgresql_database.infusethink_staging.name,
+  )
+}
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Terraform remote state backend (pg backend) — one DB, one schema per env.
 # The connection string is published to Secrets Manager so the `mise run tf`
@@ -117,6 +135,23 @@ resource "aws_iam_role" "gha_deploy" {
 resource "aws_iam_role_policy_attachment" "gha_deploy_ecr" {
   role       = aws_iam_role.gha_deploy.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
+}
+
+resource "aws_iam_role_policy" "gha_deploy_database_url_staging" {
+  name = "infusethink-gha-deploy-database-url-staging"
+  role = aws_iam_role.gha_deploy.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid      = "GetStagingDatabaseUrl"
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"]
+        Resource = aws_secretsmanager_secret.database_url_staging.arn
+      },
+    ]
+  })
 }
 
 resource "aws_iam_role_policy" "gha_ssm_deploy" {
