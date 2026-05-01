@@ -177,7 +177,7 @@ resource "aws_iam_role_policy" "gha_ssm_deploy" {
         ]
         Condition = {
           StringLike = {
-            "ec2:ResourceTag/Name" = "infusethink-backend-*"
+            "ssm:resourceTag/Name" = "infusethink-backend-*"
           }
         }
       },
