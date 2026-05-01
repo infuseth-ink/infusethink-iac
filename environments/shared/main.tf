@@ -38,7 +38,7 @@ resource "aws_secretsmanager_secret" "database_url_staging" {
 resource "aws_secretsmanager_secret_version" "database_url_staging" {
   secret_id = aws_secretsmanager_secret.database_url_staging.id
   secret_string = format(
-    "postgres://%s:%s@%s:%d/%s?sslmode=require",
+    "postgresql://%s:%s@%s:%d/%s?sslmode=require",
     postgresql_role.infusethink_staging.name,
     urlencode(random_password.infusethink_staging.result),
     module.db.db_address,
