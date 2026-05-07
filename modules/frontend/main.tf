@@ -49,23 +49,20 @@ resource "aws_iam_role_policy" "amplify_compute_logs" {
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Amplify app
-# Connected to GitHub via the Amplify GitHub App. GitHub Actions triggers
-# builds with `aws amplify start-job --job-type RELEASE`; Amplify pulls the
-# source, runs the build_spec below, and serves the SSR output.
+# access_token (from SSM) connects the GitHub repo via UpdateApp on first apply.
+# GitHub Actions then triggers builds via:
+#   aws amplify start-job --app-id <id> --branch-name main --job-type RELEASE
 #
-# FIRST-TIME SETUP: Before running `terraform apply` with `repository` set,
-# connect the repo in the Amplify console (app davx3rzsfjmt5 → "Edit app
-# settings" → "Repository settings"). This establishes the GitHub App webhook
-# without requiring a PAT in Terraform. Terraform can then manage the
-# `repository` attribute on subsequent applies without an access_token.
+# iam_service_role_arn is set by Amplify when GitHub is connected — ignored in
+# lifecycle to prevent forced replacement on subsequent applies.
 # ──────────────────────────────────────────────────────────────────────────────
 
 resource "aws_amplify_app" "frontend" {
   name             = "infusethink-frontend-${var.environment}"
   platform         = "WEB_COMPUTE"
   compute_role_arn = aws_iam_role.amplify_compute.arn
-
-  repository = var.repository_url
+  repository       = var.repository_url
+  access_token     = var.access_token
 
   # pnpm build for Next.js SSR. baseDirectory must be .next for WEB_COMPUTE —
   # Amplify auto-detects Next.js and expects the .next output directory.
@@ -85,7 +82,7 @@ resource "aws_amplify_app" "frontend" {
       artifacts:
         baseDirectory: .next
         files:
-          - '**/*'
+          - "**/*"
       cache:
         paths:
           - .next/cache/**/*
@@ -94,6 +91,14 @@ resource "aws_amplify_app" "frontend" {
 
   # For Next.js SSR on WEB_COMPUTE, the Node.js runtime handles routing and
   # 404s — no custom_rule rewrite needed.
+
+  # iam_service_role_arn is managed by Amplify when a GitHub repo is connected.
+  # Attempting to remove it forces app replacement — ignore it here.
+  # access_token is write-only (AWS never returns it); Terraform stores the
+  # value in state so there is no perpetual diff unless the token is rotated.
+  lifecycle {
+    ignore_changes = [iam_service_role_arn, custom_rule, environment_variables]
+  }
 
   tags = {
     Name        = "infusethink-frontend-${var.environment}"
@@ -152,7 +157,9 @@ locals {
   # cert_dns_parts[1] = "CNAME"
   # cert_dns_parts[2] = record value
 
-  subdomain_dns_parts = compact(split(" ", trimspace(tolist(aws_amplify_domain_association.frontend.sub_domain)[0].dns_record)))
+  # try() guards against an empty sub_domain set (e.g. during import before the
+  # branch exists), which would otherwise crash with an invalid index error.
+  subdomain_dns_parts = try(compact(split(" ", trimspace(tolist(aws_amplify_domain_association.frontend.sub_domain)[0].dns_record))), [])
   # subdomain_dns_parts[0] = subdomain fqdn  (e.g. "demo.infuseth.ink")
   # subdomain_dns_parts[1] = "CNAME"
   # subdomain_dns_parts[2] = CloudFront hostname
@@ -174,4 +181,33 @@ resource "aws_route53_record" "frontend_subdomain" {
   ttl             = 300
   records         = [local.subdomain_dns_parts[2]]
   allow_overwrite = true
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# IAM — GHA deploy role Amplify permissions
+# Scoped to the exact app + branch so that a compromised workflow cannot
+# trigger builds on unrelated Amplify apps in the account.
+# ──────────────────────────────────────────────────────────────────────────────
+
+resource "aws_iam_role_policy" "gha_amplify" {
+  name = "infusethink-gha-amplify-${var.environment}"
+  role = var.gha_role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "AmplifyTriggerRelease"
+      Effect = "Allow"
+      Action = [
+        "amplify:StartJob",
+        "amplify:GetJob",
+        "amplify:ListJobs",
+        "amplify:StopJob",
+      ]
+      Resource = [
+        "arn:aws:amplify:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:apps/${aws_amplify_app.frontend.id}/branches/${var.branch_name}",
+        "arn:aws:amplify:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:apps/${aws_amplify_app.frontend.id}/branches/${var.branch_name}/jobs/*",
+      ]
+    }]
+  })
 }

@@ -1,5 +1,20 @@
 data "aws_caller_identity" "current" {}
 
+# ──────────────────────────────────────────────────────────────────────────────
+# GitHub PAT — stored as SSM SecureString, read by environment modules
+# to connect Amplify apps to the repository.
+# Pass at apply time: TF_VAR_github_amplify_pat=ghp_... mise run tf shared apply
+# ──────────────────────────────────────────────────────────────────────────────
+resource "aws_ssm_parameter" "github_amplify_pat" {
+  name  = "/infusethink/github/amplify-pat"
+  type  = "SecureString"
+  value = var.github_amplify_pat
+
+  tags = {
+    Name = "infusethink-github-amplify-pat"
+  }
+}
+
 module "dns" {
   source      = "../../modules/dns"
   domain_name = var.domain_name
@@ -251,26 +266,4 @@ resource "aws_iam_role" "gha_deploy_frontend" {
   tags = {
     Name = "infusethink-gha-deploy-frontend"
   }
-}
-
-resource "aws_iam_role_policy" "gha_deploy_frontend_amplify" {
-  name = "infusethink-gha-deploy-frontend-amplify"
-  role = aws_iam_role.gha_deploy_frontend.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid    = "AmplifyTriggerRelease"
-      Effect = "Allow"
-      Action = [
-        "amplify:StartJob",
-        "amplify:GetJob",
-      ]
-      Resource = [
-        # StartJob acts on the branch; GetJob acts on a specific job.
-        "arn:aws:amplify:ap-southeast-1:195199691907:apps/davx3rzsfjmt5/branches/main",
-        "arn:aws:amplify:ap-southeast-1:195199691907:apps/davx3rzsfjmt5/branches/main/jobs/*",
-      ]
-    }]
-  })
 }
