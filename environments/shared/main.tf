@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 module "dns" {
   source      = "../../modules/dns"
   domain_name = var.domain_name
@@ -214,5 +216,59 @@ resource "aws_iam_role_policy" "gha_ssm_deploy" {
         Resource = "*"
       },
     ]
+  })
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# GitHub Actions OIDC — allows the frontend app repo to deploy to Amplify
+# without long-lived AWS credentials. Uses the manual deploy API so no Git
+# connection, PAT, or webhook is needed on the Amplify side.
+#
+# TODO: IAM role names are inconsistent — backend role is "infusethink-gha-deploy"
+#       (no qualifier) while frontend is "infusethink-gha-deploy-frontend". Both
+#       should follow the same pattern, e.g. infusethink-gha-deploy-backend and
+#       infusethink-gha-deploy-frontend. Use `moved {}` blocks when renaming to
+#       avoid resource replacement.
+# ──────────────────────────────────────────────────────────────────────────────
+
+resource "aws_iam_role" "gha_deploy_frontend" {
+  name = "infusethink-gha-deploy-frontend"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = aws_iam_openid_connect_provider.github.arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "token.actions.githubusercontent.com:sub" = "repo:infuseth-ink/infusethink-web:environment:staging"
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+
+  tags = {
+    Name = "infusethink-gha-deploy-frontend"
+  }
+}
+
+resource "aws_iam_role_policy" "gha_deploy_frontend_amplify" {
+  name = "infusethink-gha-deploy-frontend-amplify"
+  role = aws_iam_role.gha_deploy_frontend.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid    = "AmplifyManualDeploy"
+      Effect = "Allow"
+      Action = [
+        "amplify:CreateDeployment",
+        "amplify:StartDeployment",
+        "amplify:GetDeployment",
+      ]
+      Resource = "arn:aws:amplify:${var.aws_region}:${data.aws_caller_identity.current.account_id}:apps/*/branches/*/deployments/*"
+    }]
   })
 }

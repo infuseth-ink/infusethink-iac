@@ -26,3 +26,14 @@ variable "backend_port" {
   type        = number
   default     = 8000
 }
+
+variable "frontend_subdomain" {
+  description = "Subdomain for the frontend Amplify app"
+  type        = string
+}
+
+variable "branch_name" {
+  description = "Git branch name that Amplify tracks for this environment"
+  type        = string
+  default     = "main"
+}

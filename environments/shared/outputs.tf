@@ -37,3 +37,8 @@ output "staging_database_url_secret_arn" {
   description = "ARN of the Secrets Manager secret holding the staging DATABASE_URL. Fetch with `aws secretsmanager get-secret-value --secret-id <arn>`."
   value       = aws_secretsmanager_secret.database_url_staging.arn
 }
+
+output "gha_deploy_frontend_role_arn" {
+  description = "ARN of the GitHub Actions IAM role for frontend Amplify deploys — use as `role-to-assume` in aws-actions/configure-aws-credentials"
+  value       = aws_iam_role.gha_deploy_frontend.arn
+}
