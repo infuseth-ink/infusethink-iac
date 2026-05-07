@@ -1,7 +1,7 @@
 [tools]
 uv = "latest"
 terraform = "1.14.9"
-tflint = "latest"
+tflint = "0.62.0"
 
 [tasks.setup]
 description = "One-time: install dev tools and git hooks"
