@@ -24,7 +24,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.TF_PLUGIN_CACHE_DIR }}
-          key: tf-providers-${{ hashFiles('environments/**/.terraform.lock.hcl') }}
+          key: tf-providers-${{ hashFiles('mise.toml', 'environments/**/versions.tf') }}
+          restore-keys: |
+            tf-providers-
 
       - name: Create provider cache dir
         run: mkdir -p "$TF_PLUGIN_CACHE_DIR"
