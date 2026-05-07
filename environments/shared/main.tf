@@ -268,6 +268,7 @@ resource "aws_iam_role_policy" "gha_deploy_frontend_amplify" {
         "amplify:StartDeployment",
         "amplify:GetDeployment",
         "amplify:ListJobs",
+        "amplify:GetJob",
         "amplify:StopJob",
       ]
       Resource = "*"
