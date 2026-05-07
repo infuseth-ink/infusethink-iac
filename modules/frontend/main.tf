@@ -3,6 +3,9 @@
 # Amplify WEB_COMPUTE needs a role it can assume to write CloudWatch Logs.
 # ──────────────────────────────────────────────────────────────────────────────
 
+data "aws_region" "current" {}
+data "aws_caller_identity" "current" {}
+
 resource "aws_iam_role" "amplify_compute" {
   name = "infusethink-amplify-compute-${var.environment}"
 
@@ -36,7 +39,10 @@ resource "aws_iam_role_policy" "amplify_compute_logs" {
         "logs:DescribeLogGroups",
         "logs:PutLogEvents",
       ]
-      Resource = "arn:aws:logs:*:*:*"
+      Resource = [
+        "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/amplify/${aws_amplify_app.frontend.id}",
+        "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/amplify/${aws_amplify_app.frontend.id}:*",
+      ]
     }]
   })
 }
