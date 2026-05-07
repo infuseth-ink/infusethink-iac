@@ -52,12 +52,8 @@ resource "aws_amplify_app" "frontend" {
   platform         = "WEB_COMPUTE"
   compute_role_arn = aws_iam_role.amplify_compute.arn
 
-  # Ensure all requests go to the index route so Next.js handles routing.
-  custom_rule {
-    source = "/<*>"
-    status = "404-200"
-    target = "/index.html"
-  }
+  # For Next.js SSR on WEB_COMPUTE, the Node.js runtime handles routing and
+  # 404s — no custom_rule rewrite needed.
 
   tags = {
     Name        = "infusethink-frontend-${var.environment}"
