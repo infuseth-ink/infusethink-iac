@@ -113,12 +113,12 @@ resource "aws_amplify_domain_association" "frontend" {
 #                                         (name may have a leading space)
 
 locals {
-  cert_dns_parts = split(" ", aws_amplify_domain_association.frontend.certificate_verification_dns_record)
+  cert_dns_parts = compact(split(" ", trimspace(aws_amplify_domain_association.frontend.certificate_verification_dns_record)))
   # cert_dns_parts[0] = record name (e.g. "_abc.demo.infuseth.ink")
   # cert_dns_parts[1] = "CNAME"
   # cert_dns_parts[2] = record value
 
-  subdomain_dns_parts = split(" ", trimspace(tolist(aws_amplify_domain_association.frontend.sub_domain)[0].dns_record))
+  subdomain_dns_parts = compact(split(" ", trimspace(tolist(aws_amplify_domain_association.frontend.sub_domain)[0].dns_record)))
   # subdomain_dns_parts[0] = subdomain fqdn  (e.g. "demo.infuseth.ink")
   # subdomain_dns_parts[1] = "CNAME"
   # subdomain_dns_parts[2] = CloudFront hostname
