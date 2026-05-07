@@ -1,19 +1,9 @@
 data "aws_caller_identity" "current" {}
 
-# ──────────────────────────────────────────────────────────────────────────────
-# GitHub PAT — stored as SSM SecureString, read by environment modules
-# to connect Amplify apps to the repository.
-# Pass at apply time: TF_VAR_github_amplify_pat=ghp_... mise run tf shared apply
-# ──────────────────────────────────────────────────────────────────────────────
-resource "aws_ssm_parameter" "github_amplify_pat" {
-  name  = "/infusethink/github/amplify-pat"
-  type  = "SecureString"
-  value = var.github_amplify_pat
-
-  tags = {
-    Name = "infusethink-github-amplify-pat"
-  }
-}
+# Note: /infusethink/github/amplify-pat SSM SecureString is created manually
+# (outside Terraform) to avoid storing the PAT value in remote state.
+# Rotate via: aws ssm put-parameter --name /infusethink/github/amplify-pat \
+#   --type SecureString --value ghp_... --overwrite --region ap-southeast-1
 
 module "dns" {
   source      = "../../modules/dns"
