@@ -49,14 +49,48 @@ resource "aws_iam_role_policy" "amplify_compute_logs" {
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Amplify app
-# No repository or access_token — GitHub Actions owns the full build+deploy
-# lifecycle using the manual deploy API (create-deployment + start-deployment).
+# Connected to GitHub via the Amplify GitHub App. GitHub Actions triggers
+# builds with `aws amplify start-job --job-type RELEASE`; Amplify pulls the
+# source, runs the build_spec below, and serves the SSR output.
+#
+# FIRST-TIME SETUP: Before running `terraform apply` with `repository` set,
+# connect the repo in the Amplify console (app davx3rzsfjmt5 → "Edit app
+# settings" → "Repository settings"). This establishes the GitHub App webhook
+# without requiring a PAT in Terraform. Terraform can then manage the
+# `repository` attribute on subsequent applies without an access_token.
 # ──────────────────────────────────────────────────────────────────────────────
 
 resource "aws_amplify_app" "frontend" {
   name             = "infusethink-frontend-${var.environment}"
   platform         = "WEB_COMPUTE"
   compute_role_arn = aws_iam_role.amplify_compute.arn
+
+  repository = var.repository_url
+
+  # pnpm build for Next.js SSR. baseDirectory must be .next for WEB_COMPUTE —
+  # Amplify auto-detects Next.js and expects the .next output directory.
+  # If an amplify.yml exists in the repo it overrides this; this spec is the
+  # fallback used when no amplify.yml is committed.
+  build_spec = <<-EOT
+    version: 1
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - corepack enable
+            - pnpm install --frozen-lockfile
+        build:
+          commands:
+            - pnpm run build
+      artifacts:
+        baseDirectory: .next
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - .next/cache/**/*
+          - node_modules/**/*
+  EOT
 
   # For Next.js SSR on WEB_COMPUTE, the Node.js runtime handles routing and
   # 404s — no custom_rule rewrite needed.
@@ -71,8 +105,8 @@ resource "aws_amplify_branch" "main" {
   app_id      = aws_amplify_app.frontend.id
   branch_name = var.branch_name
 
-  # GitHub Actions triggers deploys via the manual deploy API — no Amplify
-  # auto-build hooks needed.
+  # Auto-build disabled — GitHub Actions triggers releases via
+  # `aws amplify start-job --job-type RELEASE` after pushing to the branch.
   enable_auto_build = false
 
   stage     = "BETA"

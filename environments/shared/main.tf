@@ -220,9 +220,8 @@ resource "aws_iam_role_policy" "gha_ssm_deploy" {
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
-# GitHub Actions OIDC — allows the frontend app repo to deploy to Amplify
-# without long-lived AWS credentials. Uses the manual deploy API so no Git
-# connection, PAT, or webhook is needed on the Amplify side.
+# GitHub Actions OIDC — allows the frontend app repo to trigger Amplify builds
+# without long-lived AWS credentials.
 #
 # TODO: IAM role names are inconsistent — backend role is "infusethink-gha-deploy"
 #       (no qualifier) while frontend is "infusethink-gha-deploy-frontend". Both
@@ -261,17 +260,17 @@ resource "aws_iam_role_policy" "gha_deploy_frontend_amplify" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Sid    = "AmplifyManualDeploy"
+      Sid    = "AmplifyTriggerRelease"
       Effect = "Allow"
       Action = [
-        "amplify:CreateDeployment",
-        "amplify:StartDeployment",
-        "amplify:GetDeployment",
-        "amplify:ListJobs",
+        "amplify:StartJob",
         "amplify:GetJob",
-        "amplify:StopJob",
       ]
-      Resource = "*"
+      Resource = [
+        # StartJob acts on the branch; GetJob acts on a specific job.
+        "arn:aws:amplify:ap-southeast-1:195199691907:apps/davx3rzsfjmt5/branches/main",
+        "arn:aws:amplify:ap-southeast-1:195199691907:apps/davx3rzsfjmt5/branches/main/jobs/*",
+      ]
     }]
   })
 }

@@ -20,4 +20,5 @@ module "frontend" {
   frontend_subdomain = var.frontend_subdomain
   zone_id            = data.aws_route53_zone.shared.zone_id
   branch_name        = var.branch_name
+  repository_url     = var.repository_url
 }

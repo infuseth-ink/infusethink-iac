@@ -37,3 +37,8 @@ variable "branch_name" {
   type        = string
   default     = "main"
 }
+
+variable "repository_url" {
+  description = "GitHub repository URL for Amplify to build from"
+  type        = string
+}
