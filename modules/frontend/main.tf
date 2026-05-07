@@ -175,6 +175,10 @@ resource "aws_route53_record" "frontend_cert_verification" {
 }
 
 resource "aws_route53_record" "frontend_subdomain" {
+  # Only created once the domain association has produced a DNS record.
+  # length() == 0 during import/refresh before the branch exists.
+  count = length(local.subdomain_dns_parts) >= 3 ? 1 : 0
+
   zone_id         = var.zone_id
   name            = local.subdomain_dns_parts[0]
   type            = "CNAME"
