@@ -5,3 +5,4 @@ instance_type      = "t3.micro"
 backend_port       = 8000
 frontend_subdomain = "demo"
 branch_name        = "main"
+repository_url     = "https://github.com/infuseth-ink/infusethink-web"

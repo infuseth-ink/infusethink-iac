@@ -23,3 +23,19 @@ variable "branch_name" {
   type        = string
   default     = "main"
 }
+
+variable "repository_url" {
+  description = "GitHub repository URL (e.g. https://github.com/org/repo)"
+  type        = string
+}
+
+variable "access_token" {
+  description = "GitHub PAT used to connect the repository to Amplify (stored in SSM)"
+  type        = string
+  sensitive   = true
+}
+
+variable "gha_role_name" {
+  description = "Name of the GHA deploy IAM role to grant Amplify job permissions"
+  type        = string
+}

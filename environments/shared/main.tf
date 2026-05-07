@@ -1,5 +1,10 @@
 data "aws_caller_identity" "current" {}
 
+# Note: /infusethink/github/amplify-pat SSM SecureString is created manually
+# (outside Terraform) to avoid storing the PAT value in remote state.
+# Rotate via: aws ssm put-parameter --name /infusethink/github/amplify-pat \
+#   --type SecureString --value ghp_... --overwrite --region ap-southeast-1
+
 module "dns" {
   source      = "../../modules/dns"
   domain_name = var.domain_name
@@ -220,9 +225,8 @@ resource "aws_iam_role_policy" "gha_ssm_deploy" {
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
-# GitHub Actions OIDC — allows the frontend app repo to deploy to Amplify
-# without long-lived AWS credentials. Uses the manual deploy API so no Git
-# connection, PAT, or webhook is needed on the Amplify side.
+# GitHub Actions OIDC — allows the frontend app repo to trigger Amplify builds
+# without long-lived AWS credentials.
 #
 # TODO: IAM role names are inconsistent — backend role is "infusethink-gha-deploy"
 #       (no qualifier) while frontend is "infusethink-gha-deploy-frontend". Both
@@ -252,26 +256,4 @@ resource "aws_iam_role" "gha_deploy_frontend" {
   tags = {
     Name = "infusethink-gha-deploy-frontend"
   }
-}
-
-resource "aws_iam_role_policy" "gha_deploy_frontend_amplify" {
-  name = "infusethink-gha-deploy-frontend-amplify"
-  role = aws_iam_role.gha_deploy_frontend.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid    = "AmplifyManualDeploy"
-      Effect = "Allow"
-      Action = [
-        "amplify:CreateDeployment",
-        "amplify:StartDeployment",
-        "amplify:GetDeployment",
-        "amplify:ListJobs",
-        "amplify:GetJob",
-        "amplify:StopJob",
-      ]
-      Resource = "*"
-    }]
-  })
 }
