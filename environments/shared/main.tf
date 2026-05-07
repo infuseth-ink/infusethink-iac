@@ -267,6 +267,8 @@ resource "aws_iam_role_policy" "gha_deploy_frontend_amplify" {
         "amplify:CreateDeployment",
         "amplify:StartDeployment",
         "amplify:GetDeployment",
+        "amplify:ListJobs",
+        "amplify:StopJob",
       ]
       Resource = "arn:aws:amplify:${var.aws_region}:${data.aws_caller_identity.current.account_id}:apps/*/branches/*/deployments/*"
     }]
