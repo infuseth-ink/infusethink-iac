@@ -127,7 +127,9 @@ resource "aws_amplify_branch" "main" {
     Name        = "infusethink-frontend-${var.environment}-${var.branch_name}"
     Environment = var.environment
   }
-
+  # environment_variables aren't managed at the branch level by Terraform — Amplify
+  # may inject branch-scoped vars at runtime. Ignoring prevents a plain apply from
+  # clearing them.
   lifecycle {
     ignore_changes = [environment_variables]
   }
