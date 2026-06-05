@@ -117,6 +117,10 @@ resource "aws_amplify_branch" "main" {
   stage     = "BETA"
   framework = "Next.js - SSR"
 
+  environment_variables = {
+    AMPLIFY_MONOREPO_APP_ROOT = "apps/web"
+  }
+
   tags = {
     Name        = "infusethink-frontend-${var.environment}-${var.branch_name}"
     Environment = var.environment
