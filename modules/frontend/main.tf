@@ -89,6 +89,12 @@ resource "aws_amplify_app" "frontend" {
           - node_modules/**/*
   EOT
 
+  # Required for Amplify's pre-build framework detection (reads root package.json
+  # otherwise and fails to find 'next' in a monorepo).
+  environment_variables = {
+    AMPLIFY_MONOREPO_APP_ROOT = "apps/web"
+  }
+
   # For Next.js SSR on WEB_COMPUTE, the Node.js runtime handles routing and
   # 404s — no custom_rule rewrite needed.
 
@@ -97,7 +103,7 @@ resource "aws_amplify_app" "frontend" {
   # access_token is write-only (AWS never returns it); Terraform stores the
   # value in state so there is no perpetual diff unless the token is rotated.
   lifecycle {
-    ignore_changes = [iam_service_role_arn, custom_rule, environment_variables]
+    ignore_changes = [iam_service_role_arn, custom_rule]
   }
 
   tags = {
@@ -116,10 +122,6 @@ resource "aws_amplify_branch" "main" {
 
   stage     = "BETA"
   framework = "Next.js - SSR"
-
-  environment_variables = {
-    AMPLIFY_MONOREPO_APP_ROOT = "apps/web"
-  }
 
   tags = {
     Name        = "infusethink-frontend-${var.environment}-${var.branch_name}"
