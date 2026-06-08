@@ -246,7 +246,7 @@ resource "aws_iam_role" "gha_deploy_frontend" {
       Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = {
-          "token.actions.githubusercontent.com:sub" = "repo:infuseth-ink/infusethink-web:environment:staging"
+          "token.actions.githubusercontent.com:sub" = "repo:infuseth-ink/infusethink-frontend:environment:staging"
           "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
         }
       }
