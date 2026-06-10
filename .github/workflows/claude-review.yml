@@ -26,15 +26,25 @@ jobs:
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.issue.number }}
-            Please review this pull request. This is a Terraform IaC repository managing AWS infrastructure. Focus on:
-            - Correctness: misconfigured resources, wrong attribute values, missing required arguments
-            - Security: overly permissive IAM policies, public-facing resources that should be private, exposed secrets or hardcoded credentials
-            - AWS best practices: proper tagging, encryption at rest/in transit, least-privilege IAM, sensible defaults
-            - Terraform hygiene: missing lifecycle rules, hardcoded values that should be variables, outputs that should be exposed, improper use of `depends_on`
-            - State safety: changes that could cause unintended resource replacement or destruction (force-new)
-            - Cost: resources that could be unexpectedly expensive or missing cost controls
+            Please review this pull request. This is a Terraform IaC
+            repository managing AWS infrastructure. Focus on:
+            - Correctness: misconfigured resources, wrong attribute values,
+              missing required arguments
+            - Security: overly permissive IAM policies, public-facing
+              resources that should be private, exposed secrets or
+              hardcoded credentials
+            - AWS best practices: proper tagging, encryption at rest/in
+              transit, least-privilege IAM, sensible defaults
+            - Terraform hygiene: missing lifecycle rules, hardcoded values
+              that should be variables, outputs that should be exposed,
+              improper use of `depends_on`
+            - State safety: changes that could cause unintended resource
+              replacement or destruction (force-new)
+            - Cost: resources that could be unexpectedly expensive or
+              missing cost controls
             Use `gh pr comment` for top-level feedback.
-            Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) to highlight specific code issues.
+            Use `mcp__github_inline_comment__create_inline_comment`
+            (with `confirmed: true`) to highlight specific code issues.
             Only post GitHub comments - don't submit review text as messages.
           claude_args: |
             --model claude-sonnet-4-6
